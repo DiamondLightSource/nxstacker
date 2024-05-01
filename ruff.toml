@@ -1,0 +1,28 @@
+line-length = 79
+target-version = "py310"
+
+lint.select = ["ALL"]
+# ANN, ignore all type annotation stuff
+# PERF, no point for micro-optimisation
+# C90, ignore function complexity
+# D203, clashes with D211, which is better
+# D213, clashes with D212, which is better
+# T20, print/pprint statements
+# PLR0912, sometimes branches are not related
+# PLR0913, ignore too many arguments in function
+# PLR0915, this prevent long functions, of course it is good to have
+# short function but not by a universal hard limit
+# PLR2004, magic value comparison is often difficult to avoid for
+# scientific code
+# N803, N806, sometimes it makes sense for variable to have uppercase
+# for mathermatical formulae
+# RET504, for clarity
+# SIM108, I don't agree ternary operator is more readable
+# SLF001, access to private function often is needed although not good
+lint.ignore = ["ANN", "PERF", "C90", "D203", "D213", "T20", "PLR0912",
+    "PLR0913", "PLR0915", "PLR2004", "N803", "N806", "RET504", "SIM108",
+    "SLF001"]
+
+[lint.per-file-ignores]
+# no documentation for test functions and allow assert
+"*test*.py" = ["D", "S101"]
