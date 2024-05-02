@@ -10,3 +10,10 @@ repos:
     rev: v0.40.0
     hooks:
     - id: markdownlint
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+    - id: check-yaml
+    - id: check-toml
+    - id: trailing-whitespace
