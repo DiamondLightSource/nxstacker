@@ -1,0 +1,4 @@
+start_time_path:
+  - /entry/diamond_scan/start_time
+end_time_path:
+  - /entry/diamond_scan/end_time

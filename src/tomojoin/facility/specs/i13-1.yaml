@@ -1,0 +1,11 @@
+start_time_path:
+  - /entry1/start_time #@.nxs
+end_time_path:
+  - /entry1/end_tim #@.nxse
+detector_distance_path:
+  - /entry_1/experiment_1/detector/distance #@ptyrex output
+  - /entry1/before_scan/t2/t2_z #@.nxs
+sample_name_path:
+  - /entry1/entry_identifier #@.nxs
+rotation_angle_path:
+  - /data/scan #@pty_tomo.h5, need averaging

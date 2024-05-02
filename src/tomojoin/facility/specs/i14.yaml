@@ -1,0 +1,8 @@
+detector_distance_path:
+  - /entry/instrument/detectors/excalibur_z
+  - /entry/instrument/scannables/excalibur_z/value
+sample_name_path:
+  - /entry/sample
+rotation_angle_path:
+  - /entry/instrument/sample/sample_rot
+  - /entry/instrument/scannables/stage1/stage1_rotation
