@@ -19,7 +19,7 @@ lint.select = ["ALL"]
 # RET504, for clarity
 # SIM108, I don't agree ternary operator is more readable
 # SLF001, access to private function often is needed although not good
-lint.ignore = ["ANN", "PERF", "C90", "D203", "D213", "T20", "PLR0912",
+lint.ignore = ["D", "ANN", "PERF", "C90", "D203", "D213", "T20", "PLR0912",
     "PLR0913", "PLR0915", "PLR2004", "N803", "N806", "RET504", "SIM108",
     "SLF001"]
 
