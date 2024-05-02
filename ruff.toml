@@ -26,3 +26,4 @@ lint.ignore = ["D", "ANN", "PERF", "C90", "D203", "D213", "T20", "PLR0912",
 [lint.per-file-ignores]
 # no documentation for test functions and allow assert
 "*test*.py" = ["D", "S101"]
+"__init__.py" = ["D", "F401"]
