@@ -6,7 +6,7 @@ This module provides:
 """
 from pathlib import Path
 
-from tomojoin.io.nxtomo.minimal import create_minimal
+from nxstacker.io.nxtomo.minimal import create_minimal
 
 
 class TomoExpt:

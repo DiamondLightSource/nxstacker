@@ -6,13 +6,13 @@ from types import MappingProxyType
 
 import h5py
 import numpy as np
-from tomojoin.experiment.tomoexpt import TomoExpt
+from nxstacker.experiment.tomoexpt import TomoExpt
 
-from tomojoin.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG
-from tomojoin.io.ptycho.ptypy import PtyPyFile
-from tomojoin.io.ptycho.ptyrex import PtyREXFile
-from tomojoin.utils.io import file_has_paths
-from tomojoin.utils.parse import quote_iterable, unique_or_raise
+from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG
+from nxstacker.io.ptycho.ptypy import PtyPyFile
+from nxstacker.io.ptycho.ptyrex import PtyREXFile
+from nxstacker.utils.io import file_has_paths
+from nxstacker.utils.parse import quote_iterable, unique_or_raise
 
 
 class PtychoTomo(TomoExpt):

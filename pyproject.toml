@@ -3,7 +3,7 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tomojoin"
+name = "nxstacker"
 version = "2024.05"
 dependencies = [
   "h5py",
@@ -11,7 +11,7 @@ dependencies = [
   "numpy",
 ]
 requires-python = " >=3.10 "
-description = "An utility to produce NXtomo file from various tomography experiment"
+description = "An utility to produce NeXus-compliance file from a stack"
 readme = "README.md"
 authors = [
   { name = "Timothy Poon", email = "timothy.poon@diamond.ac.uk" },
@@ -34,4 +34,4 @@ classifiers = [
 Repository = ""
 
 [tool.setuptools.package-data]
-"tomojoin.facility.specs" = ["*.yaml"]
+"nxstacker.facility.specs" = ["*.yaml"]

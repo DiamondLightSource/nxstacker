@@ -5,8 +5,8 @@ from types import MappingProxyType
 import h5py
 import numpy as np
 
-from tomojoin.utils.io import file_has_paths, top_level_dir
-from tomojoin.utils.parse import quote_iterable
+from nxstacker.utils.io import file_has_paths, top_level_dir
+from nxstacker.utils.parse import quote_iterable
 
 
 class PtyPyFile:

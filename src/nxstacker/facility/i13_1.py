@@ -2,8 +2,8 @@ from pathlib import Path
 
 import h5py
 
-from tomojoin.facility.facility import SPECS_DIR, FacilityInfo
-from tomojoin.utils.io import dataset_from_first_valid_path
+from nxstacker.facility.facility import SPECS_DIR, FacilityInfo
+from nxstacker.utils.io import dataset_from_first_valid_path
 
 
 class I13_1(FacilityInfo): # noqa: N801
