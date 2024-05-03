@@ -1,7 +1,7 @@
 start_time_path:
-  - /entry1/start_time #@.nxs
+  - /entry/instrument/NDAttributes/NDArrayTimeStamp #@position_0.h5
 end_time_path:
-  - /entry1/end_tim #@.nxse
+  - /entry/instrument/NDAttributes/NDArrayTimeStamp #@position_0.h5
 detector_distance_path:
   - /entry_1/experiment_1/detector/distance #@ptyrex output
   - /entry1/before_scan/t2/t2_z #@.nxs
