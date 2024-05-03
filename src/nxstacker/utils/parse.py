@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+
+
 def quote_iterable(iterable):
     """Produce quoted and comma-delimited string from an iterable.
 
@@ -67,3 +70,22 @@ def unique_or_raise(iterable, companion=None, label="item", reference=None):
             raise RuntimeError(msg)
 
     return seen.pop()
+
+def add_timezone(time_isoformat):
+    """Add time zone information to an ISO 8601 time format.
+
+    Parameters
+    ----------
+    time_isoformat : str
+        a time format following ISO 8601
+
+    Returns
+    -------
+    tz_iso : str
+        the same time format with time zone information
+    """
+    time_from_iso = datetime.fromisoformat(time_isoformat)
+    time_with_tz = time_from_iso.astimezone(timezone.utc)
+    tz_iso = time_with_tz.isoformat()
+
+    return tz_iso
