@@ -4,6 +4,7 @@ import h5py
 
 from nxstacker.facility.facility import SPECS_DIR, FacilityInfo
 from nxstacker.utils.io import dataset_from_first_valid_path
+from nxstacker.utils.parse import add_timezone
 
 
 class I08_1(FacilityInfo): # noqa: N801
@@ -18,10 +19,11 @@ class I08_1(FacilityInfo): # noqa: N801
             self.specs = Path(specs)
 
         self.populate_attr()
-        self.metadata_file = {"ptychography": self.nxs_file,
-                              }
 
-    def nxs_file(self, raw_dir, scan_id):
+    def nxs_file(self, proj_file):
+        raw_dir = proj_file.raw_dir
+        scan_id = proj_file.id_scan
+
         nxs_f = Path(f"{raw_dir}/nexus/i08-1-{scan_id}.nxs")
         if nxs_f.exists():
             return nxs_f
@@ -30,7 +32,7 @@ class I08_1(FacilityInfo): # noqa: N801
                 "if they match.")
         raise FileNotFoundError(msg)
 
-    def rotation_angle(self, proj_file):
+    def rotation_angle(self, rot_f, _):
         """Retrieve rotation angle.
 
         Parameters
@@ -47,17 +49,37 @@ class I08_1(FacilityInfo): # noqa: N801
         rot_ang : float
             the rotation angle
         """
-        rot_f_method = self.metadata_file.get(proj_file.experiment,
-                                              self.nxs_file)
-        rot_f = rot_f_method(proj_file.raw_dir, proj_file.id_scan)
-
         with h5py.File(rot_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.rotation_angle_path)
             rot_ang = dset[()]
 
         return rot_ang
 
-    def sample_detector_dist(self, _):
+    def sample_detector_dist(self, _=None):
         """
         """
         return 0.072
+
+    def start_time(self, start_time_f, _):
+        with h5py.File(start_time_f, "r") as f:
+            dset = dataset_from_first_valid_path(f, self.start_time_path)
+            start_time = dset[()]
+
+        if isinstance(start_time, bytes):
+            start_time = start_time.decode()
+
+        start_time_tz = add_timezone(start_time)
+
+        return start_time_tz
+
+    def end_time(self, end_time_f, _):
+        with h5py.File(end_time_f, "r") as f:
+            dset = dataset_from_first_valid_path(f, self.end_time_path)
+            end_time = dset[()]
+
+        if isinstance(end_time, bytes):
+            end_time = end_time.decode()
+
+        end_time_tz = add_timezone(end_time)
+
+        return end_time_tz
