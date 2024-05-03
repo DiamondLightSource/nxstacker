@@ -88,6 +88,8 @@ class PtyPyFile:
                                 f"{self._storage}/data")
             self._raw_file_key = (f"{self.path_names['scan_names']}/"
                                   f"{scan_name}/data/intensities/file")
+            self._px_sz_key = (f"{self.path_names['object']}/"
+                               f"{self._storage}/_psize")
 
             # get the path of the raw file
             self._raw_file = f[self._raw_file_key][()]
@@ -128,6 +130,7 @@ class PtyPyFile:
         with h5py.File(self._file_path, "r") as f:
             self._object_shape = f[self._object_path].shape
             self._object_complex_dtype = f[self._object_path].dtype
+            self._pixel_size = f[self._px_sz_key][()].mean()
 
         # don't want to perform np.abs and np.angle by reading the
         # actual complex data

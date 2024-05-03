@@ -20,6 +20,7 @@ class PtyREXFile:
              "probe_phase": "/entry_1/process_1/output_1/probe_phase",
              "id_proj": "/entry_1/experiment_1/data/data_ID",
              "save_dir": "/entry_1/process_1/common_1/save_dir",
+             "pixel_size": "/entry_1/process_1/common_1/dx",
              })
     essential_paths = tuple(path_names.values())
     extensions = (".hdf", ".hdf5", ".h5")
@@ -136,6 +137,7 @@ class PtyREXFile:
             self._object_shape = f[pn["object_modulus"]].shape
             self._object_modulus_dtype = f[pn["object_modulus"]].dtype
             self._object_phase_dtype = f[pn["object_phase"]].dtype
+            self._pixel_size = f[pn["pixel_size"]][()].mean()
 
         if (self._object_modulus_dtype == np.float32 and
             self._object_phase_dtype == np.float32):
