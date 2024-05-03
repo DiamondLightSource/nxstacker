@@ -6,8 +6,9 @@ from types import MappingProxyType
 
 import h5py
 import numpy as np
-from nxstacker.experiment.tomoexpt import TomoExpt
 
+from nxstacker.experiment.tomoexpt import TomoExpt
+from nxstacker.io.nxtomo.metadata import MetadataPtycho
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG
 from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
@@ -107,34 +108,28 @@ class PtychoTomo(TomoExpt):
                    f"software. These software are found: {sw}.")
             raise RuntimeError(msg)
 
-    def extract_projections_details(self, *, sort_by_angle=False):
+    def extract_projections_details(self):
 
+        self.metadata = MetadataPtycho(self._projections, self._facility)
+        self.metadata.fetch_metadata()
 
-        for pty_file in self._projections:
+        # with rotation angles the projection files can be updated and
+        # sorted if desired
+        self._arrange_by_angle()
 
-
-            rot_ang = self._facility.rotation_angle(pty_file)
-            distance = self._facility.sample_detector_dist(pty_file)
-
-            # fill information after raw dir is known
-
-
-            # update the correpsonding file
+    def _arrange_by_angle(self):
+        # update id_angle for the projections
+        for pty_file, rot_ang in zip(self._projections,
+                                     self.metadata.rotation_angle,
+                                     strict=False):
             pty_file.id_angle = rot_ang
-            pty_file.distance = distance
 
-        if sort_by_angle:
+        if self.sort_by_angle:
             self._projections = sorted(self._projections,
                                        key=lambda x: float(x.id_angle))
-
         # filter angle
         if self._include_angle:
             self._projections = self._filter_angle()
-
-
-        # set global metadata from values in different projections
-        self._sample_detector_distance = np.mean([f.distance for f in
-                                                 self._projections])
 
     def _filter_angle(self):
         filtered = deque()
@@ -220,8 +215,7 @@ class PtychoTomo(TomoExpt):
             nxtomo_cplx = self.create_minimal_nxtomo(f_cplx,
                                                      self._stack_shape,
                                                      cplx_dtype,
-                                                     self._nxtomo_title,
-                                                     self._nxtomo_desc)
+                                                     )
         else:
             nxtomo_cplx = None
 
@@ -239,8 +233,7 @@ class PtychoTomo(TomoExpt):
             nxtomo_modl = self.create_minimal_nxtomo(f_modl,
                                                      self._stack_shape,
                                                      modl_dtype,
-                                                     self._nxtomo_title,
-                                                     self._nxtomo_desc)
+                                                     )
         else:
             nxtomo_modl = None
 
@@ -258,8 +251,7 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = self.create_minimal_nxtomo(f_phas,
                                                      self._stack_shape,
                                                      phas_dtype,
-                                                     self._nxtomo_title,
-                                                     self._nxtomo_desc)
+                                                     )
         else:
             nxtomo_phas = None
 

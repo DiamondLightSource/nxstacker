@@ -4,6 +4,7 @@ This module provides:
 - TomoExpt: hold attributes/methods common for tomography data
             collection.
 """
+from contextlib import suppress
 from pathlib import Path
 
 from nxstacker.io.nxtomo.minimal import create_minimal
@@ -51,23 +52,26 @@ class TomoExpt:
 
         self._projections = []
         self._stack_shape = ()
-        self._nxtomo_title = "title"
-        self._nxtomo_desc = "sample description"
-        self._sample_detector_distance = 0
-        self._id_start = ""
-        self._id_end = ""
+        self.metadata = None
+        self.sort_by_angle = False
 
         # convert the ids to str
         self._include_scan = [str(k) for k in self._include_scan]
         self._include_proj = [str(k) for k in self._include_proj]
         self._include_angle = [str(k) for k in self._include_angle]
 
-    def create_minimal_nxtomo(self, filename, stack_shape, stack_dtype,
-                              title=None, sample_desc=None):
+
+    def create_minimal_nxtomo(self, filename, stack_shape, stack_dtype):
         """Create a minimal NXtomo file."""
-        create_minimal(filename, stack_shape, stack_dtype,
-                       self._sample_detector_distance, self._facility,
-                       title=title, sample_desc=sample_desc)
+
+        md_dict = self.metadata.to_dict()
+
+        # no need to pass rotation_angle
+        with suppress(KeyError):
+            md_dict.pop("rotation_angle")
+
+        create_minimal(filename, stack_shape, stack_dtype, self._facility,
+                       **md_dict)
         return filename
 
     @property
