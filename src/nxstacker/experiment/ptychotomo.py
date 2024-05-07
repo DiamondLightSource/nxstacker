@@ -285,13 +285,16 @@ class PtychoTomo(TomoExpt):
         if self.pad_to_max and (proj_y < stack_y or proj_x < stack_x):
             # pad to stack shape if the projection is smaller than
             # others
-            y_offset = (stack_y - proj_y) // 2
-            x_offset = (stack_x - proj_x) // 2
-            y_slice = slice(y_offset, y_offset + proj_y)
-            x_slice = slice(x_offset, x_offset + proj_x)
+            y_diff = stack_y - proj_y
+            top = y_diff // 2
+            bottom = top + y_diff % 2
 
-            final = np.full((stack_y, stack_x), fill_value=proj.mean())
-            final[y_slice, x_slice] = proj
+            x_diff = stack_x - proj_x
+            left = x_diff // 2
+            right = left + x_diff % 2
+
+            final = np.pad(proj, ((top, bottom), (left, right)),
+                           mode="symmetric")
         else:
             final = proj
 
