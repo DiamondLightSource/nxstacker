@@ -1,4 +1,6 @@
+# ruff: noqa: B019
 import re
+from functools import cache
 from pathlib import Path
 from types import MappingProxyType
 
@@ -106,6 +108,7 @@ class PtyREXFile:
                f"from {self.software}.")
         raise TypeError(msg)
 
+    @cache
     def object_modulus(self, mode=0):
         with h5py.File(self._file_path, "r") as f:
             ob_mod = f[self.path_names["object_modulus"]]
@@ -121,6 +124,7 @@ class PtyREXFile:
                 raise IndexError(msg)
         return ob_modulus
 
+    @cache
     def object_phase(self, mode=0):
         with h5py.File(self._file_path, "r") as f:
             ob_ang = f[self.path_names["object_phase"]]
@@ -155,6 +159,7 @@ class PtyREXFile:
                f"from {self.software}.")
         raise TypeError(msg)
 
+    @cache
     def probe_modulus(self, mode=0):
         with h5py.File(self._file_path, "r") as f:
             pr_mod = f[self.path_names["probe_modulus"]]
@@ -170,6 +175,7 @@ class PtyREXFile:
                 raise IndexError(msg)
         return pr_modulus
 
+    @cache
     def probe_phase(self, mode=0):
         with h5py.File(self._file_path, "r") as f:
             pr_ang = f[self.path_names["probe_phase"]]
