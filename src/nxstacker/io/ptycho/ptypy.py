@@ -48,6 +48,8 @@ class PtyPyFile:
         self._pixel_size = None
         self.description = None
 
+    def fill_attr(self):
+        self.find_raw_dir()
         self._ob_attr()
         self._pr_attr()
 

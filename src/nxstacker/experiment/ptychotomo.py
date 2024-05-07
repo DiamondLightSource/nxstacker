@@ -54,7 +54,7 @@ class PtychoTomo(TomoExpt):
                     to_include = pty_file.id_scan in self.include_scan
 
                     if to_include:
-                        pty_file.find_raw_dir()
+                        pty_file.fill_attr()
                         pty_files.append(pty_file)
 
                 elif file_has_paths(fp, PtyREXFile.essential_paths):
@@ -64,13 +64,12 @@ class PtychoTomo(TomoExpt):
                                   pty_file.id_proj in self.include_proj)
 
                     if to_include:
-                        pty_file.find_raw_dir()
+                        pty_file.fill_attr()
                         pty_files.append(pty_file)
 
         print(f"{time.perf_counter() - st} s")
 
         self._projections = self._preliminary_sort(pty_files)
-
 
     def _supported_extensions(self):
         return list(chain.from_iterable([file_type.extensions for file_type in
