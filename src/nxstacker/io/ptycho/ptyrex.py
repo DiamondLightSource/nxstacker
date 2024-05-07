@@ -49,6 +49,7 @@ class PtyREXFile:
         self._id_angle = None
         self._distance = None
         self._pixel_size = None
+        self.description = None
 
         self._ob_attr()
         self._pr_attr()
