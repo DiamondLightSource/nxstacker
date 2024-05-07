@@ -153,37 +153,51 @@ class PtychoTomo(TomoExpt):
         phas_cm = (nullcontext() if nxtomo_phas is None else
                    h5py.File(nxtomo_phas, "r+"))
 
+        data_path = str(LINK_DATA)
+        rot_ang_path = str(LINK_ROT_ANG)
         with cplx_cm as f_cplx, modl_cm as f_modl, phas_cm as f_phas:
             for k, pty_file in enumerate(self._projections):
+                rot_ang = pty_file.id_angle
+
                 if pty_file.avail_complex:
-                    # if complex is accessible, use it to get
+                    # if complex data is present, use it to get
                     # modulus/phase to reduce latency from I/O
                     ob_cplx = pty_file.object_complex(mode=mode)
-                    rot_ang = pty_file.id_angle
 
                     if f_cplx:
-                        f_cplx[str(LINK_DATA)][k, :, :] = ob_cplx
-                        f_cplx[str(LINK_ROT_ANG)][k] = rot_ang
+                        complex_ = self._resize_proj(ob_cplx)
+
+                        f_cplx[data_path][k, :, :] = complex_
+                        f_cplx[rot_ang_path][k] = rot_ang
 
                     if f_modl:
-                        f_modl[str(LINK_DATA)][k, :, :] = np.abs(ob_cplx)
-                        f_modl[str(LINK_ROT_ANG)][k] = rot_ang
+                        ob_modl = np.abs(ob_cplx)
+                        modulus = self._resize_proj(ob_modl)
+
+                        f_modl[data_path][k, :, :] = modulus
+                        f_modl[rot_ang_path][k] = rot_ang
 
                     if f_phas:
-                        f_phas[str(LINK_DATA)][k, :, :] = np.angle(ob_cplx)
-                        f_phas[str(LINK_ROT_ANG)][k] = rot_ang
+                        ob_phas = np.angle(ob_cplx)
+                        phase = self._resize_proj(ob_phas)
+
+                        f_phas[data_path][k, :, :] = phase
+                        f_phas[rot_ang_path][k] = rot_ang
                 else:
                     # complex not availabe, only save modulus/phase
                     if f_modl:
                         ob_modl = pty_file.object_modulus(mode=mode)
-                        f_modl[str(LINK_DATA)][k, :, :] = ob_modl
-                        f_modl[str(LINK_ROT_ANG)][k] = rot_ang
+                        modulus = self._resize_proj(ob_modl)
+
+                        f_modl[data_path][k, :, :] = modulus
+                        f_modl[rot_ang_path][k] = rot_ang
 
                     if f_phas:
                         ob_phas = pty_file.object_phase(mode=mode)
-                        f_phas[str(LINK_DATA)][k, :, :] = ob_phas
-                        f_phas[str(LINK_ROT_ANG)][k] = rot_ang
+                        phase = self._resize_proj(ob_phas)
 
+                        f_phas[data_path][k, :, :] = phase
+                        f_phas[rot_ang_path][k] = rot_ang
 
     def _nxtomo_minimal(self):
         self._stack_shape = self._decide_stack_shape()
@@ -195,13 +209,20 @@ class PtychoTomo(TomoExpt):
         return cplx, modl, phas
 
     def _decide_stack_shape(self):
+        # assume last 2 dimensions are the actual object shape
+        # (excluding modes and other channels)
+        ob_shapes = [p.object_shape[-2:] for p in self._projections]
 
-        # determine homogeneity
-        ob_sh = unique_or_raise([p.object_shape for p in self._projections],
-                                companion=self._projections,
-                                label="object shape")
-        # ignore mode channel
-        return (self.num_projections, *ob_sh[1:])
+        if self.pad_to_max:
+            # determine maximum y and x sizes if pad to max
+            y_sh = [sh[0] for sh in ob_shapes]
+            x_sh = [sh[1] for sh in ob_shapes]
+            ob_sh = (max(y_sh), max(x_sh))
+        else:
+            ob_sh = unique_or_raise(ob_shapes, companion=self._projections,
+                                    label="object shape")
+
+        return (self.num_projections, *ob_sh)
 
     def _nxtomo_cplx_minimal(self):
         if self._save_complex and all(pty_file.avail_complex for pty_file in
@@ -256,3 +277,22 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    def _resize_proj(self, proj):
+        proj_y, proj_x = proj.shape
+        stack_y, stack_x = self._stack_shape[1:]
+
+        if self.pad_to_max and (proj_y < stack_y or proj_x < stack_x):
+            # pad to stack shape if the projection is smaller than
+            # others
+            y_offset = (stack_y - proj_y) // 2
+            x_offset = (stack_x - proj_x) // 2
+            y_slice = slice(y_offset, y_offset + proj_y)
+            x_slice = slice(x_offset, x_offset + proj_x)
+
+            final = np.full((stack_y, stack_x), fill_value=proj.mean())
+            final[y_slice, x_slice] = proj
+        else:
+            final = proj
+
+        return final

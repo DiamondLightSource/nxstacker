@@ -54,6 +54,7 @@ class TomoExpt:
         self._stack_shape = ()
         self.metadata = None
         self.sort_by_angle = False
+        self.pad_to_max = True
 
         # convert the ids to str
         self._include_scan = [str(k) for k in self._include_scan]
