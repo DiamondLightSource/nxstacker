@@ -51,6 +51,8 @@ class PtyREXFile:
         self._pixel_size = None
         self.description = None
 
+        self.trim_proj = True
+
     def fill_attr(self):
         self.find_raw_dir()
         self._ob_attr()
