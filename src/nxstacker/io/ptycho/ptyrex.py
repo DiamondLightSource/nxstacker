@@ -26,6 +26,8 @@ class PtyREXFile:
              })
     essential_paths = tuple(path_names.values())
     extensions = (".hdf", ".hdf5", ".h5")
+    pad_value_modulus = 1
+    pad_value_phase = 0
 
     def __init__(self, file_path, id_scan=None, id_proj=None, *, verify=True):
         self._file_path = Path(file_path)
@@ -103,6 +105,19 @@ class PtyREXFile:
         else:
             self._raw_dir = top_level_dir(self._file_path)
 
+    def _pad_extent(self, img, pad_value=0):
+        is_padded = np.isclose(img, pad_value)
+
+        y_extent = is_padded.all(axis=1)
+        top = np.argmin(y_extent)
+        bottom = img.shape[0] - np.argmin(y_extent[::-1])
+
+        x_extent = is_padded.all(axis=0)
+        left = np.argmin(x_extent)
+        right = img.shape[1] - np.argmin(x_extent[::-1])
+
+        return top, bottom, left, right
+
     def object_complex(self, _):
         msg = ("The complex object is not currently saved in reconstruction "
                f"from {self.software}.")
@@ -122,6 +137,12 @@ class PtyREXFile:
                        f"the maximum mode index is {num_modes-1}, but {mode} "
                         "was given.")
                 raise IndexError(msg)
+
+        if self.trim_proj:
+            top, bottom, left, right = self._pad_extent(ob_modulus,
+                                                        self.pad_value_modulus)
+            ob_modulus = ob_modulus[top:bottom, left:right]
+
         return ob_modulus
 
     @cache
@@ -138,12 +159,22 @@ class PtyREXFile:
                        f"the maximum mode index is {num_modes-1}, but {mode} "
                         "was given.")
                 raise IndexError(msg)
+
+        if self.trim_proj:
+            top, bottom, left, right = self._pad_extent(ob_phase,
+                                                        self.pad_value_phase)
+            ob_phase = ob_phase[top:bottom, left:right]
+
         return ob_phase
 
     def _ob_attr(self):
         pn = self.path_names
         with h5py.File(self._file_path, "r") as f:
-            self._object_shape = f[pn["object_modulus"]].shape
+            if self.trim_proj:
+                self._object_shape = self.object_phase().shape
+            else:
+                self._object_shape = f[pn["object_modulus"]].shape
+
             self._object_modulus_dtype = f[pn["object_modulus"]].dtype
             self._object_phase_dtype = f[pn["object_phase"]].dtype
             self._pixel_size = f[pn["pixel_size"]][()].mean()
