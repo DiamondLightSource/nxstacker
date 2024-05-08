@@ -5,9 +5,10 @@ This module provides:
             collection.
 """
 from contextlib import suppress
+from functools import cached_property
 from pathlib import Path
 
-from nxstacker.io.nxtomo.minimal import create_minimal
+from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 
 
 class TomoExpt:
@@ -134,3 +135,11 @@ class TomoExpt:
     @property
     def id_end(self):
         return self._id_end
+
+    @cached_property
+    def proj_dset_path(self):
+        return str(LINK_DATA)
+
+    @cached_property
+    def rot_ang_dset_path(self):
+        return str(LINK_ROT_ANG)

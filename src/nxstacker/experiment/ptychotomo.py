@@ -9,7 +9,6 @@ import numpy as np
 
 from nxstacker.experiment.tomoexpt import TomoExpt
 from nxstacker.io.nxtomo.metadata import MetadataPtycho
-from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG
 from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
 from nxstacker.utils.io import file_has_paths
@@ -153,8 +152,6 @@ class PtychoTomo(TomoExpt):
         phas_cm = (nullcontext() if nxtomo_phas is None else
                    h5py.File(nxtomo_phas, "r+"))
 
-        data_path = str(LINK_DATA)
-        rot_ang_path = str(LINK_ROT_ANG)
         with cplx_cm as f_cplx, modl_cm as f_modl, phas_cm as f_phas:
             for k, pty_file in enumerate(self._projections):
                 rot_ang = pty_file.id_angle
@@ -167,15 +164,13 @@ class PtychoTomo(TomoExpt):
                     if f_cplx:
                         complex_ = self._resize_proj(ob_cplx)
 
-                        f_cplx[data_path][k, :, :] = complex_
-                        f_cplx[rot_ang_path][k] = rot_ang
+                        self._save_proj_to_dset(f_cplx, k, complex_, rot_ang)
 
                     if f_modl:
                         ob_modl = np.abs(ob_cplx)
                         modulus = self._resize_proj(ob_modl)
 
-                        f_modl[data_path][k, :, :] = modulus
-                        f_modl[rot_ang_path][k] = rot_ang
+                        self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
 
                     if f_phas:
                         ob_phas = np.angle(ob_cplx)
@@ -183,16 +178,14 @@ class PtychoTomo(TomoExpt):
                         if self._unwrap_phase:
                             phase = unwrap_phase(phase)
 
-                        f_phas[data_path][k, :, :] = phase
-                        f_phas[rot_ang_path][k] = rot_ang
+                        self._save_proj_to_dset(f_phas, k, phase, rot_ang)
                 else:
                     # complex not availabe, only save modulus/phase
                     if f_modl:
                         ob_modl = pty_file.object_modulus(mode=mode)
                         modulus = self._resize_proj(ob_modl)
 
-                        f_modl[data_path][k, :, :] = modulus
-                        f_modl[rot_ang_path][k] = rot_ang
+                        self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
 
                     if f_phas:
                         ob_phas = pty_file.object_phase(mode=mode)
@@ -200,8 +193,7 @@ class PtychoTomo(TomoExpt):
                         if self._unwrap_phase:
                             phase = unwrap_phase(phase)
 
-                        f_phas[data_path][k, :, :] = phase
-                        f_phas[rot_ang_path][k] = rot_ang
+                        self._save_proj_to_dset(f_phas, k, phase, rot_ang)
 
     def _nxtomo_minimal(self):
         self._stack_shape = self._decide_stack_shape()
@@ -281,6 +273,13 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    def _save_proj_to_dset(self, fh, proj_index, proj, angle):
+        proj_dset = fh[self.proj_dset_path]
+        proj_dset[proj_index, :, :] = proj
+
+        rot_ang_dset = fh[self.rot_ang_dset_path]
+        rot_ang_dset[proj_index] = angle
 
     def _resize_proj(self, proj):
         proj_y, proj_x = proj.shape
