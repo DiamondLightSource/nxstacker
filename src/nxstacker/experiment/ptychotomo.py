@@ -223,7 +223,8 @@ class PtychoTomo(TomoExpt):
     def _nxtomo_cplx_minimal(self):
         if self._save_complex and all(pty_file.avail_complex for pty_file in
                                       self._projections):
-            f_cplx = self._nxtomo_dir / "complex.nxs"
+            prefix = self._nxtomo_file_prefix()
+            f_cplx = self._nxtomo_dir / f"{prefix}_complex.nxs"
             cplx_dtype = unique_or_raise([p.object_complex_dtype
                                           for p in self._projections],
                                          companion=self._projections,
@@ -241,7 +242,8 @@ class PtychoTomo(TomoExpt):
     def _nxtomo_modl_minimal(self):
         if self._save_modulus and all(pty_file.avail_modulus for pty_file in
                                       self._projections):
-            f_modl = self._nxtomo_dir / "modulus.nxs"
+            prefix = self._nxtomo_file_prefix()
+            f_modl = self._nxtomo_dir / f"{prefix}_modulus.nxs"
             modl_dtype = unique_or_raise([p.object_modulus_dtype
                                           for p in self._projections],
                                          companion=self._projections,
@@ -259,7 +261,8 @@ class PtychoTomo(TomoExpt):
     def _nxtomo_phas_minimal(self):
         if self._save_phase and all(pty_file.avail_phase for pty_file in
                                       self._projections):
-            f_phas = self._nxtomo_dir / "phase.nxs"
+            prefix = self._nxtomo_file_prefix()
+            f_phas = self._nxtomo_dir / f"{prefix}_phase.nxs"
             phas_dtype = unique_or_raise([p.object_phase_dtype
                                           for p in self._projections],
                                          companion=self._projections,
@@ -273,6 +276,18 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    def _nxtomo_file_prefix(self):
+        common = f"tomo_{self.short_name}"
+        if self.metadata.is_scan_single:
+            proj_start = self._projections[0].id_proj
+            proj_end = self._projections[-1].id_proj
+            prefix = (f"{common}_{self.metadata.scan_start}_"
+                      f"{proj_start}_{proj_end}")
+        else:
+            prefix = (f"{common}_{self.metadata.scan_start}_"
+                      f"{self.metadata.scan_end}")
+        return prefix
 
     def _save_proj_to_dset(self, fh, proj_index, proj, angle):
         proj_dset = fh[self.proj_dset_path]
