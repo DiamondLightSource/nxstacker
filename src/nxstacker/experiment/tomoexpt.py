@@ -14,6 +14,8 @@ from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 class TomoExpt:
     """Hold attributes/methods common for tomography data collection."""
 
+    name = "tomography"
+    short_name = "tomo"
     angle_tol = 1e-3
 
     def __init__(self, proj_dir, nxtomo_dir, facility, include_scan,
@@ -75,6 +77,24 @@ class TomoExpt:
         create_minimal(filename, stack_shape, stack_dtype, self._facility,
                        **md_dict)
         return filename
+
+    def _nxtomo_file_prefix(self):
+        common = f"tomo_{self.short_name}"
+
+        if self.metadata is None:
+            return common
+
+        if self.metadata.is_scan_single:
+            # use the projection ID when there is only one
+            # scan number
+            proj_start = self._projections[0].id_proj
+            proj_end = self._projections[-1].id_proj
+            prefix = (f"{common}_{self.metadata.scan_start}_"
+                      f"{proj_start}_{proj_end}")
+        else:
+            prefix = (f"{common}_{self.metadata.scan_start}_"
+                      f"{self.metadata.scan_end}")
+        return prefix
 
     @property
     def facility(self):

@@ -277,18 +277,6 @@ class PtychoTomo(TomoExpt):
 
         return nxtomo_phas
 
-    def _nxtomo_file_prefix(self):
-        common = f"tomo_{self.short_name}"
-        if self.metadata.is_scan_single:
-            proj_start = self._projections[0].id_proj
-            proj_end = self._projections[-1].id_proj
-            prefix = (f"{common}_{self.metadata.scan_start}_"
-                      f"{proj_start}_{proj_end}")
-        else:
-            prefix = (f"{common}_{self.metadata.scan_start}_"
-                      f"{self.metadata.scan_end}")
-        return prefix
-
     def _save_proj_to_dset(self, fh, proj_index, proj, angle):
         proj_dset = fh[self.proj_dset_path]
         proj_dset[proj_index, :, :] = proj
