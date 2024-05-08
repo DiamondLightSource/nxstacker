@@ -2,6 +2,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+from hdf5plugin import Blosc
 
 ENTRY = "entry"
 DEF = "definition"
@@ -36,10 +37,10 @@ LINK_ROT_ANG = NX_SAMPLE / ROT_ANGLE
 LINK_IMAGE_KEY = NX_DETECTOR / IMAGE_KEY
 
 
-def create_minimal(file_nxtomo, stack_shape, stack_dtype, facility,
-                   title=None, sample_description=None, detector_distance=None,
-                   x_pixel_size=None, y_pixel_size=None, start_time=None,
-                   end_time=None):
+def create_minimal(file_nxtomo, stack_shape, stack_dtype, facility, *,
+                   compress=False, title=None, sample_description=None,
+                   detector_distance=None, x_pixel_size=None,
+                   y_pixel_size=None, start_time=None, end_time=None):
     """Create a minimal NXtomo file for a stack of projections.
     """
 
@@ -57,7 +58,8 @@ def create_minimal(file_nxtomo, stack_shape, stack_dtype, facility,
         _create_detector(f, stack_shape, stack_dtype,
                          x_pixel_size=x_pixel_size,
                          y_pixel_size=y_pixel_size,
-                         detector_distance=detector_distance)
+                         detector_distance=detector_distance,
+                         compress=compress)
 
         _create_sample(f, nframe, sample_description=sample_description)
 
@@ -100,12 +102,24 @@ def _create_source(root, facility):
     return grp_source
 
 def _create_detector(root, stack_shape, stack_dtype, x_pixel_size=None,
-                     y_pixel_size=None, detector_distance=None):
+                     y_pixel_size=None, detector_distance=None, *,
+                     compress=False):
     grp_detector = root.create_group(str(NX_DETECTOR))
     grp_detector.attrs["NX_class"] = "NXdetector"
 
+    if compress:
+        compression_filter = Blosc("zstd", 9, Blosc.BITSHUFFLE)
+        compression = compression_filter.filter_id
+        compression_opts = compression_filter.filter_options
+    else:
+        compression = None
+        compression_opts = None
+    chunks = (1, stack_shape[1], stack_shape[2])
+
     grp_detector.create_dataset(DATA_DETECTOR, shape=stack_shape,
-                                dtype=stack_dtype)
+                                dtype=stack_dtype, chunks=chunks,
+                                compression=compression,
+                                compression_opts=compression_opts)
 
     grp_detector[IMAGE_KEY] = np.zeros(stack_shape[0], dtype=int)
 

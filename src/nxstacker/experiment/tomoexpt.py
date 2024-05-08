@@ -58,6 +58,7 @@ class TomoExpt:
         self.metadata = None
         self.sort_by_angle = False
         self.pad_to_max = True
+        self.compress = True
 
         # convert the ids to str
         self._include_scan = [str(k) for k in self._include_scan]
@@ -75,7 +76,7 @@ class TomoExpt:
             md_dict.pop("rotation_angle")
 
         create_minimal(filename, stack_shape, stack_dtype, self._facility,
-                       **md_dict)
+                       compress=self.compress, **md_dict)
         return filename
 
     def _nxtomo_file_prefix(self):
