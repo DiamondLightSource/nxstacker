@@ -24,11 +24,14 @@ class PtychoTomo(TomoExpt):
                                            "PtyREX": PtyREXFile,
                                            })
 
-    def __init__(self, proj_dir, nxtomo_dir, facility, include_scan,
-                 include_proj, include_angle, raw_dir=None, **kwargs):
-
-        super().__init__(proj_dir, nxtomo_dir, facility, include_scan,
-                         include_proj, include_angle, raw_dir)
+    def __init__(self, facility, proj_dir, nxtomo_dir, include_scan,
+                 include_proj, include_angle, raw_dir=None, *,
+                 sort_by_angle=False, pad_to_max=True, compress=False,
+                 **kwargs):
+        super().__init__(facility, proj_dir, nxtomo_dir, include_scan,
+                         include_proj, include_angle, raw_dir,
+                         sort_by_angle=sort_by_angle, pad_to_max=pad_to_max,
+                         compress=compress)
 
         self._save_complex = kwargs.get("save_complex", False)
         self._save_modulus = kwargs.get("save_modulus", False)

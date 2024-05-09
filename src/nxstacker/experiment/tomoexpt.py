@@ -20,8 +20,9 @@ class TomoExpt:
     short_name = "tomo"
     angle_tol = 1e-3
 
-    def __init__(self, proj_dir, nxtomo_dir, facility, include_scan,
-                 include_proj, include_angle, raw_dir=None):
+    def __init__(self, facility, proj_dir, nxtomo_dir, include_scan,
+                 include_proj, include_angle, raw_dir, sort_by_angle,
+                 pad_to_max, compress):
         """Initialise a tomography experiment."""
         if facility is None or isinstance(facility, str):
             self._facility = choose_facility_info(facility, dirs=[proj_dir,
@@ -69,9 +70,9 @@ class TomoExpt:
         self._projections = []
         self._stack_shape = ()
         self.metadata = None
-        self.sort_by_angle = False
-        self.pad_to_max = True
-        self.compress = True
+        self.sort_by_angle = sort_by_angle
+        self.pad_to_max = pad_to_max
+        self.compress = compress
 
         # convert the ids to str
         self._include_scan = [str(k) for k in self._include_scan]
