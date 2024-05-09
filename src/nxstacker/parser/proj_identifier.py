@@ -1,4 +1,5 @@
 import re
+from collections import deque
 from pathlib import Path
 
 import numpy as np
@@ -64,7 +65,7 @@ class ProjIdentifier:
         self.from_range = []
         self.from_file = []
         self.exclude = []
-        self.identifiers = []
+        self.identifiers = deque()
         self.id_type = id_type
 
         if from_range is not None:
@@ -83,6 +84,8 @@ class ProjIdentifier:
         for entry in merged:
             if entry not in self.exclude:
                 self.identifiers.append(entry)
+
+        self.identifiers = tuple(self.identifiers)
 
     def id_from_range(self, specifier):
         return generate_numbers(specifier, self.id_type)
