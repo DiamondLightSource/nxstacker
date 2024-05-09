@@ -75,7 +75,7 @@ class ProjIdentifier:
             self.from_file = self.id_from_file(from_file)
 
         if exclude is not None:
-            self.exclude = exclude
+            self.exclude = generate_numbers(exclude, self.id_type)
 
         # retain order, a bit inefficient
         merged = list(dict.fromkeys(self.from_range)) +\
