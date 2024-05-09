@@ -1,3 +1,4 @@
+import sys
 from contextlib import suppress
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
@@ -6,6 +7,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 from hdf5plugin import Blosc
+
+from nxstacker.utils.io import user_name
 
 ENTRY = "entry"
 DEF = "definition"
@@ -32,6 +35,8 @@ PROCESS = "process"
 VERSION = "version"
 PROGRAM = "program"
 DATE = "date"
+SEQ_IDX = "sequence_index"
+NOTE = "NOTE"
 
 NX_ENTRY = Path(f"/{ENTRY}")
 NX_INSTRUMENT = NX_ENTRY / INSTRUMENT
@@ -173,4 +178,14 @@ def _create_process(root):
     grp_process[PROGRAM] = "nxstacker"
     with suppress(PackageNotFoundError):
         grp_process[VERSION] = version("nxstacker")
-    grp_process[DATE] = datetime.now(timezone.utc).isoformat()
+    grp_process[DATE] = (now := datetime.now(timezone.utc).isoformat())
+    grp_process[SEQ_IDX] = 1
+
+    grp_note = grp_process.create_group(NOTE)
+    grp_note.attrs["NX_class"] = "NXnote"
+    grp_note["data"] = " ".join(sys.argv)
+    grp_note["type"] = "text/plain"
+    grp_note[SEQ_IDX] = 1
+    grp_note["author"] = user_name()
+    grp_note["description"] = "the command used to produce this file"
+    grp_note["date"] = now
