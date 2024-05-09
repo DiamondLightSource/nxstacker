@@ -1,3 +1,5 @@
+import re
+import subprocess
 from pathlib import Path
 
 import h5py
@@ -49,3 +51,40 @@ def dataset_from_first_valid_path(hdf5_file, paths):
             break
     return dataset
 
+def user_name():
+    """Get the user name as ID or real name from database if possible.
+
+    Returns
+    -------
+    the name, one of the following: "unknown", login name (from whoami)
+    or real name (from pinky)
+    """
+    try:
+        whoami = subprocess.run(["/usr/bin/whoami"], capture_output=True,
+                                text=True, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        # problem with the command "whoami", return "unknown"
+        return "unknown"
+    else:
+        login_name = whoami.stdout.strip("\n")
+
+        try:
+            pinky = subprocess.run(["/usr/bin/pinky", "-l", login_name],
+                                   capture_output=True, text=True, check=True)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            # problem with "pinky", return the login name
+            return login_name
+        else:
+            pinky_out = pinky.stdout
+            regex = re.compile(r"In real life:(.*)\n")
+
+            if (match := re.search(regex, pinky_out)) is None:
+                # fail to parse output from pinky -l
+                return login_name
+
+            real_name = match.group(1).strip(" ")
+            if real_name == "???":
+                # cannot find info from the database
+                return login_name
+
+            return real_name
