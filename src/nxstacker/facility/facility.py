@@ -104,10 +104,6 @@ class FacilityInfo:
                 val_list = list(val)
                 self.__dict__[k] = val_list + list(v)
 
-    @classmethod
-    def deduce_facility(cls, proj_dir, nxtomo_path):
-        pass
-
     @property
     def specs_dict(self):
         return self._specs_dict
