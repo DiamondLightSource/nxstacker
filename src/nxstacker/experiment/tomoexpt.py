@@ -9,6 +9,7 @@ from functools import cached_property
 from pathlib import Path
 
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
+from nxstacker.parser.proj_identifier import generate_numbers
 
 
 class TomoExpt:
@@ -35,19 +36,26 @@ class TomoExpt:
             self._nxtomo_dir = Path(nxtomo_dir)
 
         if include_scan is None:
-            self._include_scan = []
+            self._include_scan = ()
+        elif isinstance(include_scan, str):
+            self._include_scan = generate_numbers(include_scan)
         else:
-            self._include_scan = list(include_scan)
+            self._include_scan = tuple(include_scan)
 
         if include_proj is None:
-            self._include_proj = []
+            self._include_proj = ()
+        elif isinstance(include_proj, str):
+            self._include_proj = generate_numbers(include_proj)
         else:
-            self._include_proj = list(include_proj)
+            self._include_proj = tuple(include_proj)
 
         if include_angle is None:
-            self._include_angle = []
+            self._include_angle = ()
+        elif isinstance(include_angle, str):
+            self._include_angle = generate_numbers(include_angle,
+                                                   dtype=float)
         else:
-            self._include_angle = list(include_angle)
+            self._include_angle = tuple(include_angle)
 
         self._raw_dir = None
         if raw_dir is not None:
