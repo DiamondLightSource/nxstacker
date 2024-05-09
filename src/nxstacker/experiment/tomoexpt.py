@@ -10,6 +10,7 @@ from pathlib import Path
 
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 from nxstacker.parser.proj_identifier import generate_numbers
+from nxstacker.utils.facility import choose_facility_info
 
 
 class TomoExpt:
@@ -22,8 +23,12 @@ class TomoExpt:
     def __init__(self, proj_dir, nxtomo_dir, facility, include_scan,
                  include_proj, include_angle, raw_dir=None):
         """Initialise a tomography experiment."""
-        self._facility = facility
-        self._facility_id = facility.name
+        if facility is None or isinstance(facility, str):
+            self._facility = choose_facility_info(facility, dirs=[proj_dir,
+                                                                  nxtomo_dir,
+                                                                  raw_dir])
+        else:
+            self._facility = facility
 
         if proj_dir is None:
             self._proj_dir = Path()
@@ -110,10 +115,6 @@ class TomoExpt:
         return self._facility
 
     @property
-    def facility_id(self):
-        return self._facility_id
-
-    @property
     def proj_dir(self):
         return self._proj_dir
 
@@ -164,6 +165,10 @@ class TomoExpt:
     @property
     def id_end(self):
         return self._id_end
+
+    @cached_property
+    def facility_id(self):
+        return self.facility.name
 
     @cached_property
     def proj_dset_path(self):
