@@ -1,3 +1,6 @@
+from contextlib import suppress
+from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import h5py
@@ -25,6 +28,10 @@ SAMPLE = "sample"
 SAMPLE_NAME = "name"
 ROT_ANGLE = "rotation_angle"
 DATA_ENTRY = "data"
+PROCESS = "process"
+VERSION = "version"
+PROGRAM = "program"
+DATE = "date"
 
 NX_ENTRY = Path(f"/{ENTRY}")
 NX_INSTRUMENT = NX_ENTRY / INSTRUMENT
@@ -32,6 +39,7 @@ NX_SOURCE = NX_INSTRUMENT / SOURCE
 NX_DETECTOR = NX_INSTRUMENT / DETECTOR
 NX_SAMPLE = NX_ENTRY / SAMPLE
 NX_DATA = NX_ENTRY / DATA_ENTRY
+NX_PROCESS = NX_ENTRY / PROCESS
 LINK_DATA = NX_DETECTOR / DATA_DETECTOR
 LINK_ROT_ANG = NX_SAMPLE / ROT_ANGLE
 LINK_IMAGE_KEY = NX_DETECTOR / IMAGE_KEY
@@ -62,6 +70,8 @@ def create_minimal(file_nxtomo, stack_shape, stack_dtype, facility, *,
                          compress=compress)
 
         _create_sample(f, nframe, sample_description=sample_description)
+
+        _create_process(f)
 
         # link data
         _link_data(f)
@@ -155,3 +165,12 @@ def _link_data(root):
     grp_data[DATA_DETECTOR] = h5py.SoftLink(str(LINK_DATA))
     grp_data[ROT_ANGLE] = h5py.SoftLink(str(LINK_ROT_ANG))
     grp_data[IMAGE_KEY] = h5py.SoftLink(str(LINK_IMAGE_KEY))
+
+def _create_process(root):
+    grp_process = root.create_group(str(NX_PROCESS))
+    grp_process.attrs["NX_class"] = "NXprocess"
+
+    grp_process[PROGRAM] = "nxstacker"
+    with suppress(PackageNotFoundError):
+        grp_process[VERSION] = version("nxstacker")
+    grp_process[DATE] = datetime.now(timezone.utc).isoformat()
