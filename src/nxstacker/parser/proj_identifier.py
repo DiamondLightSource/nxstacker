@@ -93,5 +93,7 @@ class ProjIdentifier:
     def id_from_file(self, file_path):
         fp = Path(file_path)
         with fp.open() as f:
-            ids = [self.id_type(entry) for entry in f]
+            # only first column, assume delimited by space if more
+            # columns are present in the file
+            ids = [self.id_type(entry.split(" ")[0]) for entry in f]
         return ids
