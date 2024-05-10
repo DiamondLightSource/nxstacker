@@ -27,6 +27,8 @@ HELP_SAVE_COMPLEX = "save the complex result from ptychography"
 HELP_SAVE_MODULUS = "save the modulus result from ptychography"
 HELP_SAVE_PHASE = "save the phase result from ptychography"
 HELP_UNWRAP_PHASE = "unwrap the phase"
+HELP_REMOVE_RAMP = "remove the phase ramp"
+HELP_MEDI_NORM = "normalise the phase by shifting its median"
 
 def parse():
     parser = argparse.ArgumentParser(add_help=True)
@@ -125,9 +127,9 @@ def _parser_ptycho(subparsers, **kwargs):
     subparser.add_argument("--save-phase", action="store_true", default=True,
                            help=HELP_SAVE_PHASE)
     subparser.add_argument("--remove-ramp", action="store_true", default=False,
-                           help=NIMPL)
-    subparser.add_argument("--normalise", action="store_true", default=False,
-                           help=NIMPL)
+                           help=HELP_REMOVE_RAMP)
+    subparser.add_argument("--median-norm", action="store_true", default=False,
+                           help=HELP_MEDI_NORM)
     subparser.add_argument("--unwrap-phase", action="store_true",
                            default=False, help=HELP_UNWRAP_PHASE)
     subparser.add_argument("--rescale", action="store_true", default=False,
