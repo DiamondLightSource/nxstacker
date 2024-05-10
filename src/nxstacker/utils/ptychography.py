@@ -115,3 +115,7 @@ def rmphaseramp(a, weight=None):
     out = a * p
 
     return out
+
+def phase_shift(arr, shift):
+    """Phase shift."""
+    return arr * np.exp(1j*shift)
