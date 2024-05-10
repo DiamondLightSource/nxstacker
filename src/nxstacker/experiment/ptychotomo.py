@@ -13,7 +13,7 @@ from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
 from nxstacker.utils.io import file_has_paths
 from nxstacker.utils.parse import quote_iterable, unique_or_raise
-from nxstacker.utils.ptychography import unwrap_phase
+from nxstacker.utils.ptychography import remove_phase_ramp, unwrap_phase
 
 
 class PtychoTomo(TomoExpt):
@@ -176,6 +176,8 @@ class PtychoTomo(TomoExpt):
                         self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
 
                     if f_phas:
+                        if self._remove_ramp:
+                            ob_cplx = remove_phase_ramp(ob_cplx)
                         ob_phas = np.angle(ob_cplx)
                         phase = self._resize_proj(ob_phas)
                         if self._unwrap_phase:
@@ -191,6 +193,9 @@ class PtychoTomo(TomoExpt):
                         self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
 
                     if f_phas:
+                        if self._remove_ramp:
+                            # log warning here
+                            pass
                         ob_phas = pty_file.object_phase(mode=mode)
                         phase = self._resize_proj(ob_phas)
                         if self._unwrap_phase:
