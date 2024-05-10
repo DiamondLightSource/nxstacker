@@ -1,4 +1,3 @@
-import time
 from collections import deque
 from contextlib import nullcontext
 from itertools import chain
@@ -49,7 +48,6 @@ class PtychoTomo(TomoExpt):
 
         pty_files = deque()
 
-        st = time.perf_counter()
         extensions = self._supported_extensions()
         for fp in self.proj_dir.glob(f"**/*[{','.join(extensions)}]"):
             # look at the keys of the file to determine its type
@@ -73,8 +71,6 @@ class PtychoTomo(TomoExpt):
                     if to_include:
                         pty_file.fill_attr()
                         pty_files.append(pty_file)
-
-        print(f"{time.perf_counter() - st} s")
 
         self._projections = self._preliminary_sort(pty_files)
 
