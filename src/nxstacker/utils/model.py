@@ -105,6 +105,8 @@ class Directory(ReadOnly):
         elif value is None:
             dir_ = Path()
         else:
+            if isinstance(value, bytes):
+                value = value.decode()
             dir_ = Path(value)
 
         self.validate_or_create(dir_)
