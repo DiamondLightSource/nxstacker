@@ -71,8 +71,10 @@ class ReadOnly:
         return getattr(instance, self.private_name)
 
     def __set__(self, instance, value):
-        msg = f"can't set attribute '{self.public_name}'"
-        raise AttributeError(msg)
+        if hasattr(instance, self.private_name):
+            msg = f"can't set attribute '{self.public_name}'"
+            raise AttributeError(msg)
+        setattr(instance, self.private_name, value)
 
 
 class Directory(ReadOnly):
