@@ -133,6 +133,63 @@ class Directory(ReadOnly):
             dir_.mkdir(parents=True, exist_ok=True)
 
 
+class FilePath(ReadOnly):
+    """Represent a file path."""
+
+    def __init__(self, *, undefined_ok=False, must_exist=False):
+        """Initialise the file path descriptor.
+
+        Parameters
+        ----------
+        undefined_ok : bool, optional
+            whether the file path can be None. Default to False.
+        must_exist : bool, optional
+            whether to check for the existence of the file. Default to
+            False.
+
+        """
+        self.undefined_ok = undefined_ok
+        self.must_exist = must_exist
+
+    def __set__(self, instance, value):
+        if hasattr(instance, self.private_name):
+            msg = f"can't set attribute '{self.public_name}'"
+            raise AttributeError(msg)
+
+        if value is None and self.undefined_ok:
+            fp = None
+        elif value is None and not self.undefined_ok:
+            msg = (
+                "The file path cannot be None, or the flag 'undefined_ok' "
+                "can be turned on."
+            )
+            raise ValueError(msg)
+        else:
+            if isinstance(value, bytes):
+                value = value.decode()
+            fp = Path(value)
+
+        self.validate(fp)
+        setattr(instance, self.private_name, fp)
+
+    def validate(self, fp):
+        """Check file existence.
+
+        Parameters
+        ----------
+        fp : pathlib.Path or None
+            the file path, or None and validation is skipped.
+
+        """
+        # skip validation if it is None
+        if fp is None:
+            return
+
+        if self.must_exist and not fp.is_file():
+            msg = f"The file {fp} does not exist."
+            raise ValueError(msg)
+
+
 class IdentifierRange(ReadOnly):
     """Represent a range of projection identifiers."""
 
