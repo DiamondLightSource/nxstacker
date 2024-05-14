@@ -24,7 +24,7 @@ class UKtz(tzinfo):
         dston = last_sunday_march.replace(hour=1)
         dstoff = last_sunday_october.replace(hour=2)
 
-        if dston  <= dt.replace(tzinfo=None) < dstoff:
+        if dston <= dt.replace(tzinfo=None) < dstoff:
             # BST
             return timedelta(hours=1)
 
@@ -44,7 +44,7 @@ class UKtz(tzinfo):
         last_day = 31
         while True:
             try:
-                last_sunday = datetime(year, month, last_day) # noqa: DTZ001
+                last_sunday = datetime(year, month, last_day)  # noqa: DTZ001
             except ValueError:
                 pass
             else:
