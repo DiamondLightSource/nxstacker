@@ -11,6 +11,7 @@ from nxstacker.io.nxtomo.metadata import MetadataPtycho
 from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
 from nxstacker.utils.io import file_has_paths
+from nxstacker.utils.model import ReadOnly
 from nxstacker.utils.parse import quote_iterable, unique_or_raise
 from nxstacker.utils.ptychography import (
     phase_shift,
@@ -20,21 +21,97 @@ from nxstacker.utils.ptychography import (
 
 
 class PtychoTomo(TomoExpt):
+    """Represent a ptycho-tomography experiment."""
 
     name = "ptychography"
     short_name = "ptycho"
-    supported_software = MappingProxyType({"PtyPy": PtyPyFile,
-                                           "PtyREX": PtyREXFile,
-                                           })
+    supported_software = MappingProxyType(
+        {
+            "PtyPy": PtyPyFile,
+            "PtyREX": PtyREXFile,
+        },
+    )
+    save_complex = ReadOnly()
+    save_modulus = ReadOnly()
+    save_phase = ReadOnly()
+    remove_ramp = ReadOnly()
+    median_norm = ReadOnly()
+    unwrap_phase = ReadOnly()
+    rescale = ReadOnly()
 
-    def __init__(self, facility, proj_dir, nxtomo_dir, include_scan,
-                 include_proj, include_angle, raw_dir=None, *,
-                 sort_by_angle=False, pad_to_max=True, compress=False,
-                 **kwargs):
-        super().__init__(facility, proj_dir, nxtomo_dir, include_scan,
-                         include_proj, include_angle, raw_dir,
-                         sort_by_angle=sort_by_angle, pad_to_max=pad_to_max,
-                         compress=compress)
+    def __init__(
+        self,
+        facility,
+        proj_dir,
+        nxtomo_dir,
+        include_scan,
+        include_proj,
+        include_angle,
+        raw_dir=None,
+        *,
+        sort_by_angle=False,
+        pad_to_max=True,
+        compress=False,
+        **kwargs,
+    ):
+        """Initialise the instance.
+
+        Parameters
+        ----------
+        facility : FacilityInfo, str or None
+            the facility. It could be of the class FacilityInfo, which
+            already contains the details, or a str, where an instance of
+            FacilityInfo is initialised, or None, where the
+            corresponding facility is deduced from given directories.
+        proj_dir : pathlib.Path, str or None
+            the directory where the projections are stored. If it is
+            None, the current working directory is used.
+        nxtomo_dir : pathlib.Path, str or None
+            the directory where the NXtomo files will be saved. If it is
+            None, the current working directory is used.
+        include_scan : str, iterable or None
+            the identifiers of scans to include in the NXtomo file. If
+            it is a str, it is passed to generate_numbers; if it is an
+            iterable, it will convert to a tuple; if it is None, it will
+            be an empty tuple.
+        include_proj : str, iterable or None
+            the identifiers of projections to include in the NXtomo
+            file. See "include_scan".
+        include_angle : str, iterable or None
+            the rotation angles to be included in the NXtomo file. Use
+            this with caution as it might suffer from float-point
+            precision issue.  See "include_scan".
+        raw_dir : pathlib.Path, str or None, optional
+            the directory where the raw data are stored. For most of the
+            time this can be left as None as the raw directory is
+            inferred from the projection files, but it is useful when
+            the original raw directory is invalid. Default to None.
+        sort_by_angle : bool, optional
+            whether to sort the projections by their rotation angles.
+            Default to False.
+        pad_to_max : bool, optional
+            whether to pad the individual projection if it is not at the
+            maximum size of the stack. Default to True. If it is False
+            and there is inconsistent size, RuntimeError is raised.
+        compress : bool, optional
+            whether to apply compression (Blosc) to the NXtomo file.
+            Default to False.
+        kwargs : dict, optional
+            options for ptycho-tomography
+
+        """
+        super().__init__(
+            facility,
+            proj_dir,
+            nxtomo_dir,
+            include_scan,
+            include_proj,
+            include_angle,
+            raw_dir,
+            sort_by_angle=sort_by_angle,
+            pad_to_max=pad_to_max,
+            compress=compress,
+        )
 
         self._save_complex = kwargs.get("save_complex", False)
         self._save_modulus = kwargs.get("save_modulus", False)
@@ -45,7 +122,12 @@ class PtychoTomo(TomoExpt):
         self._rescale = kwargs.get("rescale", False)
 
     def find_all_projections(self):
+        """Find all projections.
 
+        It goes through files and directories in self.proj_dir, add the
+        file to self.projections if they should be included as informed
+        by self.include_scan and self.include_proj.
+        """
         pty_files = deque()
 
         extensions = self._supported_extensions()
@@ -65,8 +147,10 @@ class PtychoTomo(TomoExpt):
                 elif file_has_paths(fp, PtyREXFile.essential_paths):
                     pty_file = PtyREXFile(fp, verify=False)
 
-                    to_include = (pty_file.id_scan in self.include_scan and
-                                  pty_file.id_proj in self.include_proj)
+                    to_include = (
+                        pty_file.id_scan in self.include_scan
+                        and pty_file.id_proj in self.include_proj
+                    )
 
                     if to_include:
                         pty_file.fill_attr()
@@ -75,8 +159,14 @@ class PtychoTomo(TomoExpt):
         self._projections = self._preliminary_sort(pty_files)
 
     def _supported_extensions(self):
-        return list(chain.from_iterable([file_type.extensions for file_type in
-                                         self.supported_software.values()]))
+        return list(
+            chain.from_iterable(
+                [
+                    file_type.extensions
+                    for file_type in self.supported_software.values()
+                ],
+            ),
+        )
 
     def _preliminary_sort(self, files):
         software = {file.software for file in files}
@@ -92,28 +182,40 @@ class PtychoTomo(TomoExpt):
             return sorted(files, key=lambda x: int(x.id_proj))
 
         sw = quote_iterable(list(self.supported_software.keys()))
-        msg = ("The software that produces the ptychography "
-               f"reconstruction files ({self._software}) is not "
-               f"supported. Currently it supports {sw}.")
+        msg = (
+            "The software that produces the ptychography "
+            f"reconstruction files ({self._software}) is not "
+            f"supported. Currently it supports {sw}."
+        )
         raise TypeError(msg)
 
     def _check_software_num(self, software):
         if (num_sw := len(software)) == 0:
             sw = quote_iterable(list(self.supported_software.keys()))
-            msg = (f"No ptychography reconstruction file is found in "
-                   f"{self.proj_dir}. Supported software: {sw}.")
+            msg = (
+                f"No ptychography reconstruction file is found in "
+                f"{self.proj_dir}. Supported software: {sw}."
+            )
             raise FileNotFoundError(msg)
         if num_sw > 1:
             sw = quote_iterable(list(software))
-            msg = (f"Currently it only supports operations on "
-                    "ptychography reconstruction files from a single "
-                   f"software. These software are found: {sw}.")
+            msg = (
+                f"Currently it only supports operations on "
+                "ptychography reconstruction files from a single "
+                f"software. These software are found: {sw}."
+            )
             raise RuntimeError(msg)
 
     def extract_projections_details(self):
+        """Extract metadata from the projections.
 
-        self.metadata = MetadataPtycho(self._projections, self._facility)
-        self.metadata.fetch_metadata()
+        The metadata is encapsulated in the corresponding subclass of
+        NXtomoMetadata. The projections will be filtered by
+        self.include_angle as the value of rotation angle is available
+        now. They will also be sorted if it is required.
+        """
+        self._metadata = MetadataPtycho(self._projections, self._facility)
+        self._metadata.fetch_metadata()
 
         # with rotation angles the projection files can be updated and
         # sorted if desired
@@ -121,14 +223,18 @@ class PtychoTomo(TomoExpt):
 
     def _arrange_by_angle(self):
         # update id_angle for the projections
-        for pty_file, rot_ang in zip(self._projections,
-                                     self.metadata.rotation_angle,
-                                     strict=False):
+        for pty_file, rot_ang in zip(
+            self._projections,
+            self.metadata.rotation_angle,
+            strict=False,
+        ):
             pty_file.id_angle = rot_ang
 
         if self.sort_by_angle:
-            self._projections = sorted(self._projections,
-                                       key=lambda x: float(x.id_angle))
+            self._projections = sorted(
+                self._projections,
+                key=lambda x: float(x.id_angle),
+            )
         # filter angle
         if self._include_angle:
             self._projections = self._filter_angle()
@@ -136,24 +242,46 @@ class PtychoTomo(TomoExpt):
     def _filter_angle(self):
         filtered = deque()
         for pty_file in self._projections:
-            if np.any(np.abs(pty_file.id_angle - self._include_angle)
-                      < self.angle_tol):
+            if np.any(
+                np.abs(pty_file.id_angle - self._include_angle)
+                < self.angle_tol,
+            ):
                 filtered.append(pty_file)
         return list(filtered)
 
     def stack_projection(self, mode=0, *, reverse=False):
+        """Save the stack of projections into NXtomo files.
 
+        Parameters
+        ----------
+        mode : int, optional
+            the object mode from the reconstruction that will be saved
+            in NXtomo file. Default to 0.
+        reverse : bool, optional
+            whether to reverse the order of projections. Default to
+            False.
+
+        """
         if reverse:
             self._projections = self._projections[::-1]
 
         nxtomo_cplx, nxtomo_modl, nxtomo_phas = self._nxtomo_minimal()
 
-        cplx_cm = (nullcontext() if nxtomo_cplx is None else
-                   h5py.File(nxtomo_cplx, "r+"))
-        modl_cm = (nullcontext() if nxtomo_modl is None else
-                   h5py.File(nxtomo_modl, "r+"))
-        phas_cm = (nullcontext() if nxtomo_phas is None else
-                   h5py.File(nxtomo_phas, "r+"))
+        cplx_cm = (
+            nullcontext()
+            if nxtomo_cplx is None
+            else h5py.File(nxtomo_cplx, "r+")
+        )
+        modl_cm = (
+            nullcontext()
+            if nxtomo_modl is None
+            else h5py.File(nxtomo_modl, "r+")
+        )
+        phas_cm = (
+            nullcontext()
+            if nxtomo_phas is None
+            else h5py.File(nxtomo_phas, "r+")
+        )
 
         with cplx_cm as f_cplx, modl_cm as f_modl, phas_cm as f_phas:
             for k, pty_file in enumerate(self._projections):
@@ -179,9 +307,10 @@ class PtychoTomo(TomoExpt):
                         if self._remove_ramp:
                             ob_cplx = remove_phase_ramp(ob_cplx)
                         if self._median_norm:
-                            ob_cplx = phase_shift(ob_cplx,
-                                                  -np.median(np.angle(ob_cplx)),
-                                                  )
+                            ob_cplx = phase_shift(
+                                ob_cplx,
+                                -np.median(np.angle(ob_cplx)),
+                            )
 
                         ob_phas = np.angle(ob_cplx)
                         phase = self._resize_proj(ob_phas)
@@ -228,63 +357,75 @@ class PtychoTomo(TomoExpt):
             x_sh = [sh[1] for sh in ob_shapes]
             ob_sh = (max(y_sh), max(x_sh))
         else:
-            ob_sh = unique_or_raise(ob_shapes, companion=self._projections,
-                                    label="object shape")
+            ob_sh = unique_or_raise(
+                ob_shapes,
+                companion=self._projections,
+                label="object shape",
+            )
 
         return (self.num_projections, *ob_sh)
 
     def _nxtomo_cplx_minimal(self):
-        if self._save_complex and all(pty_file.avail_complex for pty_file in
-                                      self._projections):
+        if self._save_complex and all(
+            pty_file.avail_complex for pty_file in self._projections
+        ):
             prefix = self._nxtomo_file_prefix()
             f_cplx = self._nxtomo_dir / f"{prefix}_complex.nxs"
-            cplx_dtype = unique_or_raise([p.object_complex_dtype
-                                          for p in self._projections],
-                                         companion=self._projections,
-                                         label="object complex dtype")
+            cplx_dtype = unique_or_raise(
+                [p.object_complex_dtype for p in self._projections],
+                companion=self._projections,
+                label="object complex dtype",
+            )
 
-            nxtomo_cplx = self.create_minimal_nxtomo(f_cplx,
-                                                     self._stack_shape,
-                                                     cplx_dtype,
-                                                     )
+            nxtomo_cplx = self.create_minimal_nxtomo(
+                f_cplx,
+                self._stack_shape,
+                cplx_dtype,
+            )
         else:
             nxtomo_cplx = None
 
         return nxtomo_cplx
 
     def _nxtomo_modl_minimal(self):
-        if self._save_modulus and all(pty_file.avail_modulus for pty_file in
-                                      self._projections):
+        if self._save_modulus and all(
+            pty_file.avail_modulus for pty_file in self._projections
+        ):
             prefix = self._nxtomo_file_prefix()
             f_modl = self._nxtomo_dir / f"{prefix}_modulus.nxs"
-            modl_dtype = unique_or_raise([p.object_modulus_dtype
-                                          for p in self._projections],
-                                         companion=self._projections,
-                                         label="object modulus dtype")
+            modl_dtype = unique_or_raise(
+                [p.object_modulus_dtype for p in self._projections],
+                companion=self._projections,
+                label="object modulus dtype",
+            )
 
-            nxtomo_modl = self.create_minimal_nxtomo(f_modl,
-                                                     self._stack_shape,
-                                                     modl_dtype,
-                                                     )
+            nxtomo_modl = self.create_minimal_nxtomo(
+                f_modl,
+                self._stack_shape,
+                modl_dtype,
+            )
         else:
             nxtomo_modl = None
 
         return nxtomo_modl
 
     def _nxtomo_phas_minimal(self):
-        if self._save_phase and all(pty_file.avail_phase for pty_file in
-                                      self._projections):
+        if self._save_phase and all(
+            pty_file.avail_phase for pty_file in self._projections
+        ):
             prefix = self._nxtomo_file_prefix()
             f_phas = self._nxtomo_dir / f"{prefix}_phase.nxs"
-            phas_dtype = unique_or_raise([p.object_phase_dtype
-                                          for p in self._projections],
-                                         companion=self._projections,
-                                         label="object phase dtype")
+            phas_dtype = unique_or_raise(
+                [p.object_phase_dtype for p in self._projections],
+                companion=self._projections,
+                label="object phase dtype",
+            )
 
-            nxtomo_phas = self.create_minimal_nxtomo(f_phas,
-                                                     self._stack_shape,
-                                                     phas_dtype,
-                                                     )
+            nxtomo_phas = self.create_minimal_nxtomo(
+                f_phas,
+                self._stack_shape,
+                phas_dtype,
+            )
         else:
             nxtomo_phas = None
 
@@ -312,8 +453,11 @@ class PtychoTomo(TomoExpt):
             left = x_diff // 2
             right = left + x_diff % 2
 
-            final = np.pad(proj, ((top, bottom), (left, right)),
-                           mode="symmetric")
+            final = np.pad(
+                proj,
+                ((top, bottom), (left, right)),
+                mode="symmetric",
+            )
         else:
             final = proj
 
