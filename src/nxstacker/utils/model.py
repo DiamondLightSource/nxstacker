@@ -244,3 +244,33 @@ class ExperimentFacility(ReadOnly):
             facility = value
 
         setattr(instance, self.private_name, facility)
+
+
+class PositiveNumber(ReadOnly):
+    """Represent a positive number."""
+
+    def __init__(self, num_type=int):
+        """Initialise the positive number descriptor.
+
+        Parameters
+        ----------
+        num_type : type,, optional
+            the data type of the number. Default to int.
+
+        """
+        self.num_type = num_type
+
+    def __set__(self, instance, value):
+        if hasattr(instance, self.private_name):
+            msg = f"can't set attribute '{self.public_name}'"
+            raise AttributeError(msg)
+
+        num = self.num_type(value)
+        if num < 0:
+            msg = (
+                f"The attribute '{self.public_name}' cannot be "
+                f"negative ({num})."
+            )
+            raise ValueError(msg)
+
+        setattr(instance, self.private_name, num)
