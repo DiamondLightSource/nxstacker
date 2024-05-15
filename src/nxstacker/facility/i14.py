@@ -8,10 +8,20 @@ from nxstacker.utils.parse import add_timezone
 
 
 class I14(FacilityInfo):
+    """Facility information for i14."""
 
     name = "i14"
 
     def __init__(self, specs=None):
+        """Initialise the i14 facility information.
+
+        Parameters
+        ----------
+        specs : str or pathlib.Path, optional
+            addition YAML specification to the facility. Default to
+            None.
+
+        """
         super().__init__()
 
         self.specs = SPECS_DIR / "i14.yaml"
@@ -21,33 +31,48 @@ class I14(FacilityInfo):
         self.populate_attr()
 
     def nxs_file(self, proj_file):
+        """Return the path of NeXus file of a given projection file.
+
+        Parameters
+        ----------
+        proj_file : ProjectionFile
+            the projection file
+
+        Returns
+        -------
+        nxs_f : pathlib.Path
+            the path of the NeXus file
+
+        """
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
         nxs_f = Path(f"{raw_dir}/scan/i14-{scan_id}.nxs")
         if nxs_f.exists():
             return nxs_f
-        msg = (f"The NeXus file {nxs_f} does not exist. Please "
-                "check the raw data directory and scan ID to see "
-                "if they match.")
+        msg = (
+            f"The NeXus file {nxs_f} does not exist. Please "
+            "check the raw data directory and scan ID to see "
+            "if they match."
+        )
         raise FileNotFoundError(msg)
 
     def rotation_angle(self, rot_f, _):
         """Retrieve rotation angle.
 
+        The extra argument "_" is unused and acts as a placeholder so
+        there is a consistent interface across all FacilityInfo.
+
         Parameters
         ----------
-        raw_dir : Path
-            the raw data directory
-        scan_id : str
-            the scan ID
-        id_proj : int, optional
-            not use by i14
+        rot_f : str or pathlib.Path
+            the file from which the rotation angle is retrieved
 
         Returns
         -------
         rot_ang : float
-            the rotation angle
+            the rotation angle, in degree
+
         """
         with h5py.File(rot_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.rotation_angle_path)
@@ -56,16 +81,44 @@ class I14(FacilityInfo):
         return rot_ang
 
     def sample_detector_dist(self, dist_f):
-        """
+        """Retrieve the distance between the sample and detector.
+
+        Parameters
+        ----------
+        dist_f : str or pathlib.Path
+            the file from which the distance is retrieved
+
+        Returns
+        -------
+        dist : float
+            the distance, in m
+
         """
         with h5py.File(dist_f, "r") as f:
-            dset = dataset_from_first_valid_path(f,
-                                                 self.detector_distance_path)
+            dset = dataset_from_first_valid_path(
+                f, self.detector_distance_path
+            )
             dist = dset[()] * 1e-3
 
         return dist
 
     def start_time(self, start_time_f, _):
+        """Retrieve the start time.
+
+        The extra argument "_" is unused and acts as a placeholder so
+        there is a consistent interface across all FacilityInfo.
+
+        Parameters
+        ----------
+        start_time_f : str or pathlib.Path
+            the file from which the start time is retrieved
+
+        Returns
+        -------
+        start_time_tz : str
+            timestamp of the start time, in ISO 8601
+
+        """
         with h5py.File(start_time_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.start_time_path)
             start_time = dset[()]
@@ -78,6 +131,22 @@ class I14(FacilityInfo):
         return start_time_tz
 
     def end_time(self, end_time_f, _):
+        """Retrieve the end time.
+
+        The extra argument "_" is unused and acts as a placeholder so
+        there is a consistent interface across all FacilityInfo.
+
+        Parameters
+        ----------
+        end_time_f : str or pathlib.Path
+            the file from which the end time is retrieved
+
+        Returns
+        -------
+        end_time_tz : str
+            timestamp of the end time, in ISO 8601
+
+        """
         with h5py.File(end_time_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.end_time_path)
             end_time = dset[()]

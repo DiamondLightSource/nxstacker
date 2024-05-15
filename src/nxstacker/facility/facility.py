@@ -7,6 +7,8 @@ SPECS_DIR = Path(__file__).parent / "specs"
 
 
 class AccumulatedDict(dict):
+    """A dictionary which joins their values when merging."""
+
     def __or__(self, other):
         if not isinstance(other, dict):
             return NotImplemented
@@ -40,7 +42,10 @@ class AccumulatedDict(dict):
 
 
 class SpecsAccumulator:
+    """A descriptor to join values from YAML accumulatively."""
+
     def __init__(self):
+        """Initialise the name of descriptor as "specs"."""
         self.name = "specs"
 
     def __get__(self, obj, objtype=None):
@@ -84,6 +89,7 @@ class FacilityInfo:
     specs = SpecsAccumulator()
 
     def __init__(self):
+        """Initialise the information common to different facility."""
         self._specs_dict = AccumulatedDict()
         self.specs = SPECS_DIR / "common.yaml"
 
@@ -113,6 +119,7 @@ class FacilityInfo:
 
     @property
     def specs_dict(self):
+        """Return the accumulated specs dictionary."""
         return self._specs_dict
 
     def __str__(self):

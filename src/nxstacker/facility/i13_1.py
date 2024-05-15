@@ -7,11 +7,21 @@ from nxstacker.facility.facility import SPECS_DIR, FacilityInfo
 from nxstacker.utils.io import dataset_from_first_valid_path
 
 
-class I13_1(FacilityInfo): # noqa: N801
+class I13_1(FacilityInfo):  # noqa: N801
+    """Facility information for i13-1."""
 
     name = "i13-1"
 
     def __init__(self, specs=None):
+        """Initialise the i13-1 facility information.
+
+        Parameters
+        ----------
+        specs : str or pathlib.Path, optional
+            addition YAML specification to the facility. Default to
+            None.
+
+        """
         super().__init__()
 
         self.specs = SPECS_DIR / "i13-1.yaml"
@@ -21,39 +31,84 @@ class I13_1(FacilityInfo): # noqa: N801
         self.populate_attr()
 
     def nxs_file(self, proj_file):
+        """Return the path of NeXus file of a given projection file.
+
+        Parameters
+        ----------
+        proj_file : ProjectionFile
+            the projection file
+
+        Returns
+        -------
+        nxs_f : pathlib.Path
+            the path of the NeXus file
+
+        """
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
         nxs_f = Path(f"{raw_dir}/raw/{scan_id}.nxs")
         if nxs_f.exists():
             return nxs_f
-        msg = (f"The NeXus file {nxs_f} does not exist. Please "
-                "check the raw data directory and scan ID to see "
-                "if they match.")
+        msg = (
+            f"The NeXus file {nxs_f} does not exist. Please "
+            "check the raw data directory and scan ID to see "
+            "if they match."
+        )
         raise FileNotFoundError(msg)
 
     def pty_tomo_file(self, proj_file):
+        """Return the path of pty_tomo file of a given projection file.
+
+        Parameters
+        ----------
+        proj_file : ProjectionFile
+            the projection file
+
+        Returns
+        -------
+        pty_tomo_f : pathlib.Path
+            the path of the pty_tomo file
+
+        """
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
         pty_tomo_f = Path(f"{raw_dir}/raw/{scan_id}/raw/pty_tomo.h5")
         if pty_tomo_f.exists():
             return pty_tomo_f
-        msg = (f"The pty_tomo file {pty_tomo_f} does not exist. Please "
-                "check the raw data directory and scan ID to see "
-                "if they match.")
+        msg = (
+            f"The pty_tomo file {pty_tomo_f} does not exist. Please "
+            "check the raw data directory and scan ID to see "
+            "if they match."
+        )
         raise FileNotFoundError(msg)
 
     def position_file(self, proj_file):
+        """Return the path of position file of a given projection file.
+
+        Parameters
+        ----------
+        proj_file : ProjectionFile
+            the projection file
+
+        Returns
+        -------
+        pos_f : pathlib.Path
+            the path of the position file
+
+        """
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
         pos_f = Path(f"{raw_dir}/raw/{scan_id}/raw/positions_0.h5")
         if pos_f.exists():
             return pos_f
-        msg = (f"The position file {pos_f} does not exist. Please "
-                "check the raw data directory and scan ID to see "
-                "if they match.")
+        msg = (
+            f"The position file {pos_f} does not exist. Please "
+            "check the raw data directory and scan ID to see "
+            "if they match."
+        )
         raise FileNotFoundError(msg)
 
     def rotation_angle(self, rot_f, proj_file=None):
@@ -61,21 +116,22 @@ class I13_1(FacilityInfo): # noqa: N801
 
         Parameters
         ----------
-        raw_dir : Path
-            the raw data directory
-        scan_id : str
-            the scan ID
-        id_proj : int
-            the projection ID.
+        rot_f : str or pathlib.Path
+            the file from which the rotation angle is retrieved
+        proj_file : ProjectionFile
+            the projection file
 
         Returns
         -------
         rot_ang : float
-            the rotation angle
+            the rotation angle, in degree
+
         """
         if proj_file is None:
-            msg = (f"{self.name} requires a projection file to determine the "
-                    "rotation angle")
+            msg = (
+                f"{self.name} requires a projection file to determine the "
+                "rotation angle"
+            )
             raise ValueError(msg)
 
         with h5py.File(rot_f, "r") as f:
@@ -85,11 +141,23 @@ class I13_1(FacilityInfo): # noqa: N801
         return rot_ang
 
     def sample_detector_dist(self, dist_f):
-        """
+        """Retrieve the distance between the sample and detector.
+
+        Parameters
+        ----------
+        dist_f : str or pathlib.Path
+            the file from which the distance is retrieved
+
+        Returns
+        -------
+        dist : float
+            the distance, in m
+
         """
         with h5py.File(dist_f, "r") as f:
-            dset = dataset_from_first_valid_path(f,
-                                                 self.detector_distance_path)
+            dset = dataset_from_first_valid_path(
+                f, self.detector_distance_path
+            )
             dist = dset[()]
             if dist_f.suffix == ".nxs":
                 # assume .nxs recorded with mm
@@ -125,6 +193,7 @@ class I13_1(FacilityInfo): # noqa: N801
         -------
         start_time_tz : str
             the start time in ISO 8601 format with time zone
+
         """
         num_projs = self._tot_num_proj(proj_file)
 
@@ -138,13 +207,13 @@ class I13_1(FacilityInfo): # noqa: N801
 
         # YY-MM-DD from file modification time
         # hh-mm-ss from the timestamp
-        start_datetime = datetime.fromtimestamp(start_time,
-                                                tz=timezone.utc)
-        file_mtime = datetime.fromtimestamp(start_time_f.stat().st_mtime,
-                                            tz=timezone.utc)
-        start_time_tz = start_datetime.replace(year=file_mtime.year,
-                                               month=file_mtime.month,
-                                               day=file_mtime.day).isoformat()
+        start_datetime = datetime.fromtimestamp(start_time, tz=timezone.utc)
+        file_mtime = datetime.fromtimestamp(
+            start_time_f.stat().st_mtime, tz=timezone.utc
+        )
+        start_time_tz = start_datetime.replace(
+            year=file_mtime.year, month=file_mtime.month, day=file_mtime.day
+        ).isoformat()
 
         return start_time_tz
 
@@ -162,11 +231,14 @@ class I13_1(FacilityInfo): # noqa: N801
         ----------
         end_time_f : pathlib.Path
             the file used to get the end time
+        proj_file : ProjectionFile
+            the ptychography projection file
 
         Returns
         -------
         end_time_tz : str
             the end time in ISO 8601 format with time zone
+
         """
         num_projs = self._tot_num_proj(proj_file)
 
@@ -180,12 +252,12 @@ class I13_1(FacilityInfo): # noqa: N801
 
         # YY-MM-DD from file modification time
         # hh-mm-ss from the timestamp
-        end_datetime = datetime.fromtimestamp(end_time,
-                                              tz=timezone.utc)
-        file_mtime = datetime.fromtimestamp(end_time_f.stat().st_mtime,
-                                            tz=timezone.utc)
-        end_time_tz = end_datetime.replace(year=file_mtime.year,
-                                           month=file_mtime.month,
-                                           day=file_mtime.day).isoformat()
+        end_datetime = datetime.fromtimestamp(end_time, tz=timezone.utc)
+        file_mtime = datetime.fromtimestamp(
+            end_time_f.stat().st_mtime, tz=timezone.utc
+        )
+        end_time_tz = end_datetime.replace(
+            year=file_mtime.year, month=file_mtime.month, day=file_mtime.day
+        ).isoformat()
 
         return end_time_tz
