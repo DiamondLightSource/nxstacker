@@ -11,7 +11,7 @@ from nxstacker.io.nxtomo.metadata import MetadataPtycho
 from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
 from nxstacker.utils.io import file_has_paths
-from nxstacker.utils.model import ReadOnly
+from nxstacker.utils.model import FixedValue
 from nxstacker.utils.parse import quote_iterable, unique_or_raise
 from nxstacker.utils.ptychography import (
     phase_shift,
@@ -31,13 +31,13 @@ class PtychoTomo(TomoExpt):
             "PtyREX": PtyREXFile,
         },
     )
-    save_complex = ReadOnly()
-    save_modulus = ReadOnly()
-    save_phase = ReadOnly()
-    remove_ramp = ReadOnly()
-    median_norm = ReadOnly()
-    unwrap_phase = ReadOnly()
-    rescale = ReadOnly()
+    save_complex = FixedValue()
+    save_modulus = FixedValue()
+    save_phase = FixedValue()
+    remove_ramp = FixedValue()
+    median_norm = FixedValue()
+    unwrap_phase = FixedValue()
+    rescale = FixedValue()
 
     def __init__(
         self,

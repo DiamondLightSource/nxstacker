@@ -12,8 +12,8 @@ from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 from nxstacker.utils.model import (
     Directory,
     ExperimentFacility,
+    FixedValue,
     IdentifierRange,
-    ReadOnly,
 )
 
 
@@ -30,12 +30,12 @@ class TomoExpt:
     include_scan = IdentifierRange(int)
     include_proj = IdentifierRange(int)
     include_angle = IdentifierRange(float)
-    projections = ReadOnly()
-    stack_shape = ReadOnly()
-    sort_by_angle = ReadOnly()
-    pad_to_max = ReadOnly()
-    compress = ReadOnly()
-    metadata = ReadOnly()
+    projections = FixedValue()
+    stack_shape = FixedValue()
+    sort_by_angle = FixedValue()
+    pad_to_max = FixedValue()
+    compress = FixedValue()
+    metadata = FixedValue()
 
     def __init__(
         self,
