@@ -58,8 +58,13 @@ class UKtz(tzinfo):
             last_day -= 1
 
 
-class ReadOnly:
-    """A read-only descriptor."""
+class FixedValue:
+    """A descriptor with fixed value.
+
+    For an attribute named "name", it stores the value in "_name" and it
+    cannot be changed afterwards, although it is possible to change the
+    value of "_name" directly.
+    """
 
     def __set_name__(self, owner, name):
         self.public_name = name
@@ -77,7 +82,7 @@ class ReadOnly:
         setattr(instance, self.private_name, value)
 
 
-class Directory(ReadOnly):
+class Directory(FixedValue):
     """Represent a directory."""
 
     def __init__(self, *, undefined_ok=False, must_exist=False):
@@ -133,7 +138,7 @@ class Directory(ReadOnly):
             dir_.mkdir(parents=True, exist_ok=True)
 
 
-class FilePath(ReadOnly):
+class FilePath(FixedValue):
     """Represent a file path."""
 
     def __init__(self, *, undefined_ok=False, must_exist=False):
@@ -190,7 +195,7 @@ class FilePath(ReadOnly):
             raise ValueError(msg)
 
 
-class IdentifierRange(ReadOnly):
+class IdentifierRange(FixedValue):
     """Represent a range of projection identifiers."""
 
     def __init__(self, num_type=int):
@@ -222,7 +227,7 @@ class IdentifierRange(ReadOnly):
         setattr(instance, self.private_name, id_rng_as_str)
 
 
-class ExperimentFacility(ReadOnly):
+class ExperimentFacility(FixedValue):
     """Represent a facility info in an experiment."""
 
     def __set__(self, instance, value):
@@ -246,7 +251,7 @@ class ExperimentFacility(ReadOnly):
         setattr(instance, self.private_name, facility)
 
 
-class PositiveNumber(ReadOnly):
+class PositiveNumber(FixedValue):
     """Represent a positive number."""
 
     def __init__(self, num_type=int):
