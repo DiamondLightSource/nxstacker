@@ -6,57 +6,123 @@ import h5py
 import numpy as np
 
 from nxstacker.utils.io import file_has_paths, top_level_dir
+from nxstacker.utils.model import (
+    Directory,
+    FilePath,
+    FixedValue,
+    PositiveNumber,
+)
 from nxstacker.utils.parse import quote_iterable
 
 
 class PtyREXFile:
-
     experiment = "ptychography"
     software = "PtyREX"
     path_names = MappingProxyType(
-            {"object_modulus": "/entry_1/process_1/output_1/object_modulus",
-             "object_phase": "/entry_1/process_1/output_1/object_phase",
-             "probe_modulus": "/entry_1/process_1/output_1/probe_modulus",
-             "probe_phase": "/entry_1/process_1/output_1/probe_phase",
-             "id_proj": "/entry_1/experiment_1/data/data_ID",
-             "save_dir": "/entry_1/process_1/common_1/save_dir",
-             "pixel_size": "/entry_1/process_1/common_1/dx",
-             })
+        {
+            "object_modulus": "/entry_1/process_1/output_1/object_modulus",
+            "object_phase": "/entry_1/process_1/output_1/object_phase",
+            "probe_modulus": "/entry_1/process_1/output_1/probe_modulus",
+            "probe_phase": "/entry_1/process_1/output_1/probe_phase",
+            "id_proj": "/entry_1/experiment_1/data/data_ID",
+            "save_dir": "/entry_1/process_1/common_1/save_dir",
+            "pixel_size": "/entry_1/process_1/common_1/dx",
+        },
+    )
     essential_paths = tuple(path_names.values())
     extensions = (".hdf", ".hdf5", ".h5")
     pad_value_modulus = 1
     pad_value_phase = 0
+    file_path = FilePath(must_exist=True)
+    id_scan = FixedValue()
+    id_proj = FixedValue()
+    id_angle = FixedValue()
+    distance = PositiveNumber(float)
+    pixel_size = PositiveNumber(float)
+    description = FixedValue()
+    trim_proj = FixedValue()
+    raw_dir = Directory(undefined_ok=True, must_exist=True)
+    object_shape = FixedValue()
+    object_complex_dtype = FixedValue()
+    object_modulus_dtype = FixedValue()
+    object_phase_dtype = FixedValue()
+    probe_shape = FixedValue()
+    probe_complex_dtype = FixedValue()
+    probe_modulus_dtype = FixedValue()
+    probe_phase_dtype = FixedValue()
 
-    def __init__(self, file_path, id_scan=None, id_proj=None, *, verify=True):
-        self._file_path = Path(file_path)
+    def __init__(
+        self,
+        file_path,
+        id_scan=None,
+        id_proj=None,
+        *,
+        verify=True,
+        raw_dir=None,
+        description=None,
+    ):
+        """Initialise an instance of PtyREX file.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path or str
+            the file path of the reconstruction file.
+        id_scan : str or None, optional
+            the scan identifier of the reconstruction. If it is None, it
+            tries to fetch this from the file and its attributes.
+            Default to None.
+        id_proj : str or None, optional
+            the projection identifier of the reconstruction. If it is
+            None, it tries to fetch this from the file and its
+            attributes. Default to None.
+        verify : bool, optional
+            whether to verify the reconstruction file contains a minimum
+            set of keys specific to the software from it is produced.
+            Default to True.
+        raw_dir : pathlib.Path or str, optional
+            the directory that stores the raw data of this
+            reconstruction.  Default to None, and it will be deduced
+            from the attributes of the reconstruction file.
+        description : str, optional
+            a meaningful description about the sample of the
+            reconstruction. Default to None.
+
+        """
+        self.file_path = file_path
 
         if verify and not self.verify_file():
             paths = quote_iterable(self.essential_paths)
-            msg = (f"The file {self._file_path} is not a reconstruction "
-                   f"from {self.software}. Does the file have all the "
-                   f"following path names: {paths}?")
+            msg = (
+                f"The file {self._file_path} is not a reconstruction "
+                f"from {self.software}. Does the file have all the "
+                f"following path names: {paths}?"
+            )
             raise KeyError(msg)
 
         if id_scan is None:
-            self._id_scan = self._retrieve_id_scan()
+            self.id_scan = self._retrieve_id_scan()
         else:
-            self._id_scan = str(id_scan)
+            self.id_scan = str(id_scan)
 
         if id_proj is None:
-            self._id_proj = self._retrieve_id_proj()
+            self.id_proj = self._retrieve_id_proj()
         else:
-            self._id_proj = str(id_proj)
+            self.id_proj = str(id_proj)
 
-        # these are not known at this stage
-        self._id_angle = None
-        self._distance = None
-        self._pixel_size = None
-        self.description = None
+        # the rotation angle is not known at this stage
+        # this is available from the raw data file and retrieval of it
+        # depends on the facility
+        self.id_angle = None
 
+        self.raw_dir = raw_dir
+        self.description = description
         self.trim_proj = True
 
     def fill_attr(self):
-        self.find_raw_dir()
+        """Assign attributes as determined from the file."""
+        if self.raw_dir is None:
+            self._overwrite_raw_dir()
+
         self._ob_attr()
         self._pr_attr()
 
@@ -72,10 +138,12 @@ class PtyREXFile:
         if match is not None:
             id_scan = match.group(1)
         else:
-            msg = ("Fail to deduce scan number from the file name "
-                    "{self._file_path}. It can be set by passing value "
-                    "to the argument 'id_scan' when initialising "
-                    "the instance.")
+            msg = (
+                "Fail to deduce scan number from the file name "
+                "{self._file_path}. It can be set by passing value "
+                "to the argument 'id_scan' when initialising "
+                "the instance."
+            )
             raise RuntimeError(msg)
 
         return id_scan
@@ -89,7 +157,8 @@ class PtyREXFile:
 
         return id_proj
 
-    def find_raw_dir(self):
+    def _overwrite_raw_dir(self):
+        """Overwrite the _raw_dir attribute."""
         # check save_dir first
         with h5py.File(self._file_path, "r") as f:
             save_dir = f[self.path_names["save_dir"]][()]
@@ -104,6 +173,7 @@ class PtyREXFile:
             self._raw_dir = top_level_dir(self._file_path)
 
     def _pad_extent(self, img, pad_value=0):
+        """Return the extent of padding for PtyREX file."""
         is_padded = np.isclose(img, pad_value)
 
         y_extent = is_padded.all(axis=1)
@@ -117,11 +187,22 @@ class PtyREXFile:
         return top, bottom, left, right
 
     def object_complex(self, _):
-        msg = ("The complex object is not currently saved in reconstruction "
-               f"from {self.software}.")
+        """PtyREX file does not save the complex object."""
+        msg = (
+            "The complex object is not currently saved in reconstruction "
+            f"from {self.software}."
+        )
         raise TypeError(msg)
 
     def object_modulus(self, mode=0):
+        """Return the object modulus of a particular mode.
+
+        Parameters
+        ----------
+        mode : int, optional
+            the mode of the object modulus to be returned. Default to 0.
+
+        """
         with h5py.File(self._file_path, "r") as f:
             ob_mod = f[self.path_names["object_modulus"]]
 
@@ -129,20 +210,32 @@ class PtyREXFile:
                 # ignore all other channels
                 ob_modulus = ob_mod[mode, 0, 0, 0, 0, :, :]
             else:
-                mode_str = "mode" + "s"*(num_modes>1)
-                msg = (f"The object modulus has {num_modes} {mode_str} and "
-                       f"the maximum mode index is {num_modes-1}, but {mode} "
-                        "was given.")
+                mode_str = "mode" + "s" * (num_modes > 1)
+                msg = (
+                    f"The object modulus has {num_modes} {mode_str} and "
+                    f"the maximum mode index is {num_modes-1}, but {mode} "
+                    "was given."
+                )
                 raise IndexError(msg)
 
         if self.trim_proj:
-            top, bottom, left, right = self._pad_extent(ob_modulus,
-                                                        self.pad_value_modulus)
+            top, bottom, left, right = self._pad_extent(
+                ob_modulus,
+                self.pad_value_modulus,
+            )
             ob_modulus = ob_modulus[top:bottom, left:right]
 
         return ob_modulus
 
     def object_phase(self, mode=0):
+        """Return the object phase of a particular mode.
+
+        Parameters
+        ----------
+        mode : int, optional
+            the mode of the object phase to be returned. Default to 0.
+
+        """
         with h5py.File(self._file_path, "r") as f:
             ob_ang = f[self.path_names["object_phase"]]
 
@@ -150,15 +243,19 @@ class PtyREXFile:
                 # ignore all other channels
                 ob_phase = ob_ang[mode, 0, 0, 0, 0, :, :]
             else:
-                mode_str = "mode" + "s"*(num_modes>1)
-                msg = (f"The object phase has {num_modes} {mode_str} and "
-                       f"the maximum mode index is {num_modes-1}, but {mode} "
-                        "was given.")
+                mode_str = "mode" + "s" * (num_modes > 1)
+                msg = (
+                    f"The object phase has {num_modes} {mode_str} and "
+                    f"the maximum mode index is {num_modes-1}, but {mode} "
+                    "was given."
+                )
                 raise IndexError(msg)
 
         if self.trim_proj:
-            top, bottom, left, right = self._pad_extent(ob_phase,
-                                                        self.pad_value_phase)
+            top, bottom, left, right = self._pad_extent(
+                ob_phase,
+                self.pad_value_phase,
+            )
             ob_phase = ob_phase[top:bottom, left:right]
 
         return ob_phase
@@ -167,26 +264,39 @@ class PtyREXFile:
         pn = self.path_names
         with h5py.File(self._file_path, "r") as f:
             if self.trim_proj:
-                self._object_shape = self.object_phase().shape
+                self.object_shape = self.object_phase().shape
             else:
-                self._object_shape = f[pn["object_modulus"]].shape
+                self.object_shape = f[pn["object_modulus"]].shape
 
-            self._object_modulus_dtype = f[pn["object_modulus"]].dtype
-            self._object_phase_dtype = f[pn["object_phase"]].dtype
-            self._pixel_size = f[pn["pixel_size"]][()].mean()
+            self.object_modulus_dtype = f[pn["object_modulus"]].dtype
+            self.object_phase_dtype = f[pn["object_phase"]].dtype
+            self.pixel_size = f[pn["pixel_size"]][()].mean()
 
-        if (self._object_modulus_dtype == np.float32 and
-            self._object_phase_dtype == np.float32):
-            self._object_complex_dtype = np.complex64
+        if (
+            self.object_modulus_dtype == np.float32
+            and self.object_phase_dtype == np.float32
+        ):
+            self.object_complex_dtype = np.complex64
         else:
-            self._object_complex_dtype = np.complex128
+            self.object_complex_dtype = np.complex128
 
     def probe_complex(self, _):
-        msg = ("The complex probe is not currently saved in reconstruction "
-               f"from {self.software}.")
+        """PtyREX file does not save the complex probe."""
+        msg = (
+            "The complex probe is not currently saved in reconstruction "
+            f"from {self.software}."
+        )
         raise TypeError(msg)
 
     def probe_modulus(self, mode=0):
+        """Return the probe modulus of a particular mode.
+
+        Parameters
+        ----------
+        mode : int, optional
+            the mode of the probe modulus to be returned. Default to 0.
+
+        """
         with h5py.File(self._file_path, "r") as f:
             pr_mod = f[self.path_names["probe_modulus"]]
 
@@ -194,14 +304,24 @@ class PtyREXFile:
                 # ignore all other channels
                 pr_modulus = pr_mod[mode, 0, 0, 0, 0, :, :]
             else:
-                mode_str = "mode" + "s"*(num_modes>1)
-                msg = (f"The probe modulus has {num_modes} {mode_str} and "
-                       f"the maximum mode index is {num_modes-1}, but {mode} "
-                        "was given.")
+                mode_str = "mode" + "s" * (num_modes > 1)
+                msg = (
+                    f"The probe modulus has {num_modes} {mode_str} and "
+                    f"the maximum mode index is {num_modes-1}, but {mode} "
+                    "was given."
+                )
                 raise IndexError(msg)
         return pr_modulus
 
     def probe_phase(self, mode=0):
+        """Return the probe phase of a particular mode.
+
+        Parameters
+        ----------
+        mode : int, optional
+            the mode of the probe phase to be returned. Default to 0.
+
+        """
         with h5py.File(self._file_path, "r") as f:
             pr_ang = f[self.path_names["probe_phase"]]
 
@@ -209,104 +329,33 @@ class PtyREXFile:
                 # ignore all other channels
                 pr_phase = pr_ang[mode, 0, 0, 0, 0, :, :]
             else:
-                mode_str = "mode" + "s"*(num_modes>1)
-                msg = (f"The probe phase has {num_modes} {mode_str} and "
-                       f"the maximum mode index is {num_modes-1}, but {mode} "
-                        "was given.")
+                mode_str = "mode" + "s" * (num_modes > 1)
+                msg = (
+                    f"The probe phase has {num_modes} {mode_str} and "
+                    f"the maximum mode index is {num_modes-1}, but {mode} "
+                    "was given."
+                )
                 raise IndexError(msg)
         return pr_phase
 
     def _pr_attr(self):
         pn = self.path_names
         with h5py.File(self._file_path, "r") as f:
-            self._probe_shape = f[pn["probe_modulus"]].shape
-            self._probe_modulus_dtype = f[pn["probe_modulus"]].dtype
-            self._probe_phase_dtype = f[pn["probe_phase"]].dtype
+            self.probe_shape = f[pn["probe_modulus"]].shape
+            self.probe_modulus_dtype = f[pn["probe_modulus"]].dtype
+            self.probe_phase_dtype = f[pn["probe_phase"]].dtype
 
-        if (self._probe_modulus_dtype == np.float32 and
-            self._probe_phase_dtype == np.float32):
-            self._probe_complex_dtype = np.complex64
+        if (
+            self.probe_modulus_dtype == np.float32
+            and self.probe_phase_dtype == np.float32
+        ):
+            self.probe_complex_dtype = np.complex64
         else:
-            self._probe_complex_dtype = np.complex128
+            self.probe_complex_dtype = np.complex128
 
     def verify_file(self):
+        """Check existence of some essential hdf5 paths."""
         return file_has_paths(self._file_path, self.essential_paths)
-
-    @property
-    def file_path(self):
-        return self._file_path
-
-    @property
-    def raw_dir(self):
-        return self._raw_dir
-
-    @property
-    def object_shape(self):
-        return self._object_shape
-
-    @property
-    def object_complex_dtype(self):
-        return self._object_complex_dtype
-
-    @property
-    def object_modulus_dtype(self):
-        return self._object_modulus_dtype
-
-    @property
-    def object_phase_dtype(self):
-        return self._object_phase_dtype
-
-    @property
-    def probe_shape(self):
-        return self._probe_shape
-
-    @property
-    def probe_complex_dtype(self):
-        return self._probe_complex_dtype
-
-    @property
-    def probe_modulus_dtype(self):
-        return self._probe_modulus_dtype
-
-    @property
-    def probe_phase_dtype(self):
-        return self._probe_phase_dtype
-
-    @property
-    def id_scan(self):
-        if self._id_scan is None:
-            self._id_scan = self._retrieve_id_scan()
-        return self._id_scan
-
-    @property
-    def id_proj(self):
-        if self._id_proj is None:
-            self._id_proj = self._retrieve_id_proj()
-        return self._id_proj
-
-    @property
-    def id_angle(self):
-        return self._id_angle
-
-    @id_angle.setter
-    def id_angle(self, angle):
-        self._id_angle = angle
-
-    @property
-    def distance(self):
-        return self._distance
-
-    @distance.setter
-    def distance(self, dist):
-        self._distance = dist
-
-    @property
-    def pixel_size(self):
-        return self._pixel_size
-
-    @pixel_size.setter
-    def pixel_size(self, px_sz):
-        self._pixel_size = px_sz
 
     @property
     def avail_complex(self):
@@ -325,8 +374,11 @@ class PtyREXFile:
 
     def __repr__(self):
         cls_name = type(self).__name__
-        id_angle = (f"id_angle={self._id_angle}" if self._id_angle is not None
-                    else "")
-        return (f"{cls_name}(file_path='{self._file_path}',"
-                f"id_scan='{self._id_scan}',"
-                f"id_proj='{self._id_proj}'{id_angle})")
+        id_angle = (
+            f"id_angle={self._id_angle}" if self._id_angle is not None else ""
+        )
+        return (
+            f"{cls_name}(file_path='{self._file_path}',"
+            f"id_scan='{self._id_scan}',"
+            f"id_proj='{self._id_proj}'{id_angle})"
+        )
