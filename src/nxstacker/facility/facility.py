@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from pathlib import Path
 
 import yaml
@@ -5,11 +6,8 @@ import yaml
 SPECS_DIR = Path(__file__).parent / "specs"
 
 
-
 class AccumulatedDict(dict):
-
     def __or__(self, other):
-
         if not isinstance(other, dict):
             return NotImplemented
 
@@ -42,7 +40,6 @@ class AccumulatedDict(dict):
 
 
 class SpecsAccumulator:
-
     def __init__(self):
         self.name = "specs"
 
@@ -66,8 +63,10 @@ class SpecsAccumulator:
             try:
                 f = spec.open()
             except FileNotFoundError:
-                msg = (f"The facility specification file '{spec.resolve()}' "
-                        "cannot be found.")
+                msg = (
+                    f"The facility specification file '{spec.resolve()}' "
+                    "cannot be found."
+                )
                 raise FileNotFoundError(msg) from None
             else:
                 obj.__dict__["_specs_dict"] |= yaml.safe_load(f)
@@ -79,8 +78,9 @@ class SpecsAccumulator:
 
 
 class FacilityInfo:
-    """
-    """
+    """Hold directory structure and hdf5 paths of a facility."""
+
+    name = "unknown"
     specs = SpecsAccumulator()
 
     def __init__(self):
@@ -93,17 +93,31 @@ class FacilityInfo:
         self.source_probe = "x-ray"
 
     def populate_attr(self):
-        for k, v in self.specs_dict.items():
-            val  = self.__dict__.get(k)
+        """Define attributes from a dict."""
+        for attr_name, attr_val in self.specs_dict.items():
+            # get the current value of the attribute
+            current_val = self.__dict__.get(attr_name)
 
-            if val is None or isinstance(val, str):
-                self.__dict__[k] = v
-            elif isinstance(val, list):
-                self.__dict__[k].extend(list(v))
+            if current_val is None or isinstance(current_val, str):
+                # set it if is currently not defined
+                # it will overwrite if it is a string
+                self.__dict__[attr_name] = attr_val
+            elif isinstance(current_val, Sequence):
+                # extend it if it is a sequence
+                self.__dict__[attr_name].extend(list(attr_val))
             else:
-                val_list = list(val)
-                self.__dict__[k] = val_list + list(v)
+                # if not, make the content from yaml as list and extent
+                # it
+                val_list = list(current_val)
+                self.__dict__[attr_name] = val_list + list(attr_val)
 
     @property
     def specs_dict(self):
         return self._specs_dict
+
+    def __str__(self):
+        return f"'{self.name}' information"
+
+    def __repr__(self):
+        cls_name = type(self).__name__
+        return f"{cls_name}()"
