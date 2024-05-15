@@ -2,10 +2,29 @@ from datetime import datetime, timezone
 
 import numpy as np
 
+from nxstacker.utils.model import ExperimentFacility, FixedValue
+
 
 class NXtomoMetadata:
+    """Hold metadata of a NXtomo file."""
+
+    facility = ExperimentFacility()
+    projections = FixedValue()
 
     def __init__(self, projections, facility):
+        """Initialisse metadata of a NXtomo file.
+
+        Parameters
+        ----------
+        projections : list
+            the list of projection files
+        facility : FacilityInfo, str or None
+            the facility. It could be of the class FacilityInfo, which
+            already contains the details, or a str, where an instance of
+            FacilityInfo is initialised, or None, where the
+            corresponding facility is deduced from given directories.
+
+        """
         self.projections = list(projections)
         self.facility = facility
 
@@ -21,8 +40,15 @@ class NXtomoMetadata:
         self.start_end_id_scan()
 
     def start_end_id_scan(self):
-        if ((start := self.projections[0].id_scan) ==
-            (end := self.projections[-1].id_scan)):
+        """Determine the start and end scan ID.
+
+        Set the attribute is_scan_single to indicate a projection list
+        with the same scan ID.
+
+        """
+        if (start := self.projections[0].id_scan) == (
+            end := self.projections[-1].id_scan
+        ):
             self.is_scan_single = True
         else:
             self.is_scan_single = False
@@ -31,23 +57,27 @@ class NXtomoMetadata:
         self.scan_end = end
 
     def to_dict(self):
-        d = {"title": self.title,
-             "sample_description": self.sample_description,
-             "rotation_angle": self.rotation_angle,
-             "detector_distance": self.detector_distance,
-             "x_pixel_size": self.x_pixel_size,
-             "y_pixel_size": self.y_pixel_size,
-             "start_time": self.start_time,
-             "end_time": self.end_time,
-             }
+        """Return the metadata as a dictionary."""
+        d = {
+            "title": self.title,
+            "sample_description": self.sample_description,
+            "rotation_angle": self.rotation_angle,
+            "detector_distance": self.detector_distance,
+            "x_pixel_size": self.x_pixel_size,
+            "y_pixel_size": self.y_pixel_size,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+        }
         return d
 
-class MetadataPtycho(NXtomoMetadata):
 
+class MetadataPtycho(NXtomoMetadata):
     def __init__(self, projections, facility):
+        """Initialise the ptychography metadata."""
         super().__init__(projections, facility)
 
     def fetch_metadata(self):
+        """Find the metadata of the current projections and facility."""
         self.title = self.title_from_scan()
         self.sample_description = self.description_from_scan()
         self.rotation_angle = self.find_rotation_angle()
@@ -58,14 +88,14 @@ class MetadataPtycho(NXtomoMetadata):
         self.end_time = self.end_time_from_scan()
 
     def title_from_scan(self):
-
+        """Determine the tile from scan ID."""
         if self.is_scan_single:
             return f"{self.scan_start}"
         return f"{self.scan_start}-{self.scan_end}"
 
     def description_from_scan(self):
-
-        if (descr := self.projections[0].description):
+        """Determine the description of the sample from projection."""
+        if descr := self.projections[0].description:
             # all should have the same description, take the first
             return descr
 
@@ -74,7 +104,7 @@ class MetadataPtycho(NXtomoMetadata):
         return f"Tomography experiment at {raw_dir} with {self.title}"
 
     def find_rotation_angle(self):
-
+        """Find rotation angle."""
         match self.facility.name:
             case "i14":
                 file_finder = self.facility.nxs_file
@@ -94,7 +124,7 @@ class MetadataPtycho(NXtomoMetadata):
         return rotation_angles
 
     def find_detector_dist(self):
-
+        """Find sample-detector distance."""
         match self.facility.name:
             case "i14":
                 file_finder = [self.facility.nxs_file]
@@ -104,8 +134,7 @@ class MetadataPtycho(NXtomoMetadata):
             case "i13-1":
                 # there can be two places for the sample detector
                 # distance, the projection file itself or the .nxs
-                file_finder = [lambda x: x.file_path,
-                               self.facility.nxs_file]
+                file_finder = [lambda x: x.file_path, self.facility.nxs_file]
             case _:
                 msg = f"Facility {self.facility.name} not supported"
                 raise ValueError(msg)
@@ -129,6 +158,7 @@ class MetadataPtycho(NXtomoMetadata):
         return distance
 
     def find_pixel_size(self):
+        """Find pixel size."""
         # for ptychography, the pixel size is the real-space dimension
         # in the reconstruction, and this should be retrieved from the
         # projection file
@@ -140,6 +170,7 @@ class MetadataPtycho(NXtomoMetadata):
         return pixel_size
 
     def start_time_from_scan(self):
+        """Find start time."""
         match self.facility.name:
             case "i14":
                 file_finder = self.facility.nxs_file
@@ -160,6 +191,7 @@ class MetadataPtycho(NXtomoMetadata):
         return start_time
 
     def end_time_from_scan(self):
+        """Find end time."""
         match self.facility.name:
             case "i14":
                 file_finder = self.facility.nxs_file
