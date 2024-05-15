@@ -18,6 +18,7 @@ def file_has_paths(file_path, paths):
     Returns
     -------
     True or False, indicating whether it contains all the paths or not
+
     """
     with h5py.File(file_path, "r") as f:
         for path in paths:
@@ -25,8 +26,23 @@ def file_has_paths(file_path, paths):
                 return False
     return True
 
-def top_level_dir(directory, level=6):
-    return Path("/".join(Path(directory).parts[:level]))
+
+def top_level_dir(directory, depth=6):
+    """Return partial path of a directory with a specific depth.
+
+    E.g. "/first/second/third/fourth" with a depth of 2 will return
+    "/first/second".
+
+    Parameters
+    ----------
+    directory : str or pathlib.Path
+        the directory which a partial path is to be extracted
+    depth : int, optional
+        the depth to be returned
+
+    """
+    return Path("/".join(Path(directory).parts[:depth]))
+
 
 def dataset_from_first_valid_path(hdf5_file, paths):
     """Get the dataset from the file with the first valid path.
@@ -43,6 +59,7 @@ def dataset_from_first_valid_path(hdf5_file, paths):
     dataset : h5py.Dataset
         the stored dataset from the first valid path, None if no dataset
         is retrieved after trying all the paths
+
     """
     dataset = None
     for path in paths:
@@ -51,6 +68,7 @@ def dataset_from_first_valid_path(hdf5_file, paths):
             break
     return dataset
 
+
 def user_name():
     """Get the user name as ID or real name from database if possible.
 
@@ -58,10 +76,12 @@ def user_name():
     -------
     the name, one of the following: "unknown", login name (from whoami)
     or real name (from pinky)
+
     """
     try:
-        whoami = subprocess.run(["/usr/bin/whoami"], capture_output=True,
-                                text=True, check=True)
+        whoami = subprocess.run(
+            ["/usr/bin/whoami"], capture_output=True, text=True, check=True
+        )
     except (FileNotFoundError, subprocess.CalledProcessError):
         # problem with the command "whoami", return "unknown"
         return "unknown"
@@ -69,8 +89,12 @@ def user_name():
         login_name = whoami.stdout.strip("\n")
 
         try:
-            pinky = subprocess.run(["/usr/bin/pinky", "-l", login_name],
-                                   capture_output=True, text=True, check=True)
+            pinky = subprocess.run(
+                ["/usr/bin/pinky", "-l", login_name],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
         except (FileNotFoundError, subprocess.CalledProcessError):
             # problem with "pinky", return the login name
             return login_name

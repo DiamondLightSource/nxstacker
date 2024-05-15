@@ -21,6 +21,7 @@ def choose_facility_info(facility, dirs=None):
     -------
     facility_info : FacilityInfo
         the facility information instance
+
     """
     if facility is None:
         facility = deduce_from_directory(dirs)
@@ -39,6 +40,7 @@ def choose_facility_info(facility, dirs=None):
 
     return facility_info
 
+
 def deduce_from_directory(dirs=None):
     """Deduce facility from a list of directories.
 
@@ -52,6 +54,7 @@ def deduce_from_directory(dirs=None):
     Returns
     -------
     a string that indicates the facility
+
     """
     pattern = re.compile(r"[ibempkx]\d\d(?:-\d)?(?!\d+)")
 
@@ -68,8 +71,10 @@ def deduce_from_directory(dirs=None):
         dirs = [*list(dirs), Path.cwd()]
 
     for dir_ in dirs:
-        if (dir_ is not None and
-            (facility := re.search(pattern, str(dir_))) is not None):
+        if (
+            dir_ is not None
+            and (facility := re.search(pattern, str(dir_))) is not None
+        ):
             return facility.group()
 
     msg = "Failure in deducing the facility, please provide it explicitly."

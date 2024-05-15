@@ -2,10 +2,21 @@ from nxstacker.experiment.ptychotomo import PtychoTomo
 from nxstacker.utils.facility import choose_facility_info
 
 
-def select_tomo_expt(experiment_type, facility=None, proj_dir=None,
-                     nxtomo_dir=None, include_scan=None, include_proj=None,
-                     include_angle=None, raw_dir=None, *, sort_by_angle=False,
-                     pad_to_max=True, compress=False, **kwargs):
+def select_tomo_expt(
+    experiment_type,
+    facility=None,
+    proj_dir=None,
+    nxtomo_dir=None,
+    include_scan=None,
+    include_proj=None,
+    include_angle=None,
+    raw_dir=None,
+    *,
+    sort_by_angle=False,
+    pad_to_max=True,
+    compress=False,
+    **kwargs,
+):
     """Select the experiment for the projections.
 
     Parameters
@@ -22,9 +33,18 @@ def select_tomo_expt(experiment_type, facility=None, proj_dir=None,
     nxtomo_dir : Path, optional
         the directory where the NXtomo file will be saved. Default to
         None, and it will be set to the current working directory.
-    include_scan : list, optional
-    include_proj : list, optional
-    include_angle : list, optional
+    include_scan : str or list, optional
+        the scan to be included. If it is a str, it should be in the
+        format <START>[-<END>[:<STEP>]]. Default to None, every scan
+        found in the proj_dir will be included.
+    include_proj : str or list, optional
+        the projection to be included. If it is a str, it should be in
+        the format <START>[-<END>[:<STEP>]]. Default to None, every
+        projection found in the proj_dir will be included.
+    include_angle : str or list, optional
+        the rotation angle to be included. If it is a str, it should be
+        in the format <START>[-<END>[:<STEP>]]. Default to None, every
+        rotation angle will be included.
     raw_dir : Path, optional
         the directory where the raw files are saved. Default to None,
         and it will be deduced from projections.
@@ -45,19 +65,28 @@ def select_tomo_expt(experiment_type, facility=None, proj_dir=None,
     -------
     tomo_expt : TomoExpt
         the tomography experiment from a particular type of projections
-    """
 
+    """
     # determine facility
-    facility_info = choose_facility_info(facility, dirs=[proj_dir, nxtomo_dir,
-                                         raw_dir])
+    facility_info = choose_facility_info(
+        facility, dirs=[proj_dir, nxtomo_dir, raw_dir]
+    )
 
     match experiment_type.lower():
         case "ptycho" | "ptychography":
-            tomo_expt = PtychoTomo(facility_info, proj_dir, nxtomo_dir,
-                                   include_scan, include_proj, include_angle,
-                                   raw_dir, sort_by_angle=sort_by_angle,
-                                   pad_to_max=pad_to_max, compress=compress,
-                                   **kwargs)
+            tomo_expt = PtychoTomo(
+                facility_info,
+                proj_dir,
+                nxtomo_dir,
+                include_scan,
+                include_proj,
+                include_angle,
+                raw_dir,
+                sort_by_angle=sort_by_angle,
+                pad_to_max=pad_to_max,
+                compress=compress,
+                **kwargs,
+            )
         case "xrf":
             pass
         case "dpc":

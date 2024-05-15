@@ -17,6 +17,7 @@ def quote_iterable(iterable):
     -------
     comma : str
         the quoted and comma-delimited string
+
     """
     if len(iterable) == 1:
         return f"'{next(iter(iterable))}'"
@@ -26,6 +27,7 @@ def quote_iterable(iterable):
     comma += f" and {quoted[-1]}"
 
     return comma
+
 
 def unique_or_raise(iterable, companion=None, label="item", reference=None):
     """Return unique item or raise when encounters inhomogeneous item.
@@ -49,13 +51,16 @@ def unique_or_raise(iterable, companion=None, label="item", reference=None):
     Returns
     -------
     the unique item
+
     """
     if companion is None:
         companion = iterable
 
     if len(iterable) != len(companion):
-        msg = ("The companion must have the same length with the actual "
-                "iterable.")
+        msg = (
+            "The companion must have the same length with the actual "
+            "iterable."
+        )
         raise ValueError(msg)
 
     seen = set()
@@ -65,11 +70,14 @@ def unique_or_raise(iterable, companion=None, label="item", reference=None):
 
         seen.add(item)
         if len(seen) > 1:
-            msg = (f"Inhomogenous {label} for {companion[k]}. "
-                   f"This has {item} but the reference is {reference}.")
+            msg = (
+                f"Inhomogenous {label} for {companion[k]}. "
+                f"This has {item} but the reference is {reference}."
+            )
             raise RuntimeError(msg)
 
     return seen.pop()
+
 
 def add_timezone(time_isoformat):
     """Add time zone information to an ISO 8601 time format.
@@ -83,6 +91,7 @@ def add_timezone(time_isoformat):
     -------
     tz_iso : str
         the same time format with time zone information
+
     """
     time_from_iso = datetime.fromisoformat(time_isoformat)
     time_with_tz = time_from_iso.astimezone(timezone.utc)
