@@ -51,29 +51,71 @@ LINK_ROT_ANG = NX_SAMPLE / ROT_ANGLE
 LINK_IMAGE_KEY = NX_DETECTOR / IMAGE_KEY
 
 
-def create_minimal(file_nxtomo, stack_shape, stack_dtype, facility, *,
-                   compress=False, title=None, sample_description=None,
-                   detector_distance=None, x_pixel_size=None,
-                   y_pixel_size=None, start_time=None, end_time=None):
-    """Create a minimal NXtomo file for a stack of projections.
-    """
+def create_minimal(
+    file_nxtomo,
+    stack_shape,
+    stack_dtype,
+    facility,
+    *,
+    compress=False,
+    title=None,
+    sample_description=None,
+    detector_distance=None,
+    x_pixel_size=None,
+    y_pixel_size=None,
+    start_time=None,
+    end_time=None,
+):
+    """Create a minimal NXtomo file of a stack of projections.
 
+    Parameters
+    ----------
+    file_nxtomo : str or pathlib.Path
+        the NXtomo file path
+    stack_shape : iterable
+        the shape of the stack. This should be 3-dimensional.
+    stack_dtype : type
+        the data type of the stack
+    facility : FacilityInfo
+        the facility information
+    compress : bool, optional
+        whether to apply compression (Blosc) to the NXtomo file. Default
+        to False.
+    title : str, optional
+        title of the file. Default to None, skip saving it.
+    sample_description : str, optional
+        description of the sample. Default to None, skip saving it.
+    detector_distance : float, optional
+        sample-to-detector distance. Default to None, skip saving it.
+    x_pixel_size, y_pixel_size : float, optional
+        x and y pixel size. Default to None, skip saving it.
+    start_time, end_time: str, optional
+        start and end time in ISO 8601. Default to None, skip saving it.
+
+    """
     stack_shape = tuple(stack_shape)
+    if (ndim := len(stack_shape)) != 3:
+        msg = f"The stack should be 3-dimensional, but it is {ndim}."
+        raise ValueError(msg)
+
     nframe = stack_shape[0]
 
     with h5py.File(file_nxtomo, "w") as f:
-
         _create_entry(f, title=title, start_time=start_time, end_time=end_time)
 
         _create_instrument(f)
 
         _create_source(f, facility)
 
-        _create_detector(f, stack_shape, stack_dtype,
-                         x_pixel_size=x_pixel_size,
-                         y_pixel_size=y_pixel_size,
-                         detector_distance=detector_distance,
-                         compress=compress)
+        _create_detector(
+            f,
+            stack_shape,
+            stack_dtype,
+            x_pixel_size=x_pixel_size,
+            y_pixel_size=y_pixel_size,
+            detector_distance=detector_distance,
+            compress=compress,
+        )
 
         _create_sample(f, nframe, sample_description=sample_description)
 
@@ -81,6 +123,7 @@ def create_minimal(file_nxtomo, stack_shape, stack_dtype, facility, *,
 
         # link data
         _link_data(f)
+
 
 def _create_entry(root, title=None, start_time=None, end_time=None):
     grp_entry = root.create_group(str(NX_ENTRY))
@@ -105,6 +148,7 @@ def _create_instrument(root):
 
     return grp_instrument
 
+
 def _create_source(root, facility):
     grp_source = root.create_group(str(NX_SOURCE))
     grp_source.attrs["NX_class"] = "NXsource"
@@ -117,9 +161,17 @@ def _create_source(root, facility):
 
     return grp_source
 
-def _create_detector(root, stack_shape, stack_dtype, x_pixel_size=None,
-                     y_pixel_size=None, detector_distance=None, *,
-                     compress=False):
+
+def _create_detector(
+    root,
+    stack_shape,
+    stack_dtype,
+    x_pixel_size=None,
+    y_pixel_size=None,
+    detector_distance=None,
+    *,
+    compress=False,
+):
     grp_detector = root.create_group(str(NX_DETECTOR))
     grp_detector.attrs["NX_class"] = "NXdetector"
 
@@ -132,10 +184,14 @@ def _create_detector(root, stack_shape, stack_dtype, x_pixel_size=None,
         compression_opts = None
     chunks = (1, stack_shape[1], stack_shape[2])
 
-    grp_detector.create_dataset(DATA_DETECTOR, shape=stack_shape,
-                                dtype=stack_dtype, chunks=chunks,
-                                compression=compression,
-                                compression_opts=compression_opts)
+    grp_detector.create_dataset(
+        DATA_DETECTOR,
+        shape=stack_shape,
+        dtype=stack_dtype,
+        chunks=chunks,
+        compression=compression,
+        compression_opts=compression_opts,
+    )
 
     grp_detector[IMAGE_KEY] = np.zeros(stack_shape[0], dtype=int)
 
@@ -151,6 +207,7 @@ def _create_detector(root, stack_shape, stack_dtype, x_pixel_size=None,
         grp_detector[DIST] = detector_distance
         grp_detector[DIST].attrs["units"] = "m"
 
+
 def _create_sample(root, nframe, sample_description=None):
     grp_sample = root.create_group(str(NX_SAMPLE))
     grp_sample.attrs["NX_class"] = "NXsample"
@@ -158,10 +215,11 @@ def _create_sample(root, nframe, sample_description=None):
     if sample_description is not None:
         grp_sample[SAMPLE_NAME] = str(sample_description)
 
-    dset_angle = grp_sample.create_dataset(ROT_ANGLE,
-                                           shape=nframe,
-                                           dtype=float)
+    dset_angle = grp_sample.create_dataset(
+        ROT_ANGLE, shape=nframe, dtype=float
+    )
     dset_angle.attrs["units"] = "degrees"
+
 
 def _link_data(root):
     grp_data = root.create_group(str(NX_DATA))
@@ -171,6 +229,7 @@ def _link_data(root):
     grp_data[DATA_DETECTOR] = h5py.SoftLink(str(LINK_DATA))
     grp_data[ROT_ANGLE] = h5py.SoftLink(str(LINK_ROT_ANG))
     grp_data[IMAGE_KEY] = h5py.SoftLink(str(LINK_IMAGE_KEY))
+
 
 def _create_process(root):
     grp_process = root.create_group(str(NX_PROCESS))
