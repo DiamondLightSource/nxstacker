@@ -7,6 +7,8 @@ lint.select = ["ALL"]
 # C90, ignore function complexity
 # D203, clashes with D211, which is better
 # D213, clashes with D212, which is better
+# D100, does anybody read this?
+# D105, magic methods are usually straightforward
 # T20, print/pprint statements
 # PLR0912, sometimes branches are not related
 # PLR0913, ignore too many arguments in function
@@ -20,9 +22,10 @@ lint.select = ["ALL"]
 # SIM108, I don't agree ternary operator is more readable
 # SLF001, access to private function often is needed although not good
 # S603, hard to validate input
-lint.ignore = ["D", "ANN", "PERF", "C90", "D203", "D213", "T20", "PLR0912",
-    "PLR0913", "PLR0915", "PLR2004", "N803", "N806", "RET504", "SIM108",
-    "SLF001", "S603"]
+# COM812, ISC001, suggested by formatter
+lint.ignore = ["D", "ANN", "PERF", "C90", "D203", "D213", "D100", "D105",
+    "T20", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "N803", "N806",
+    "RET504", "SIM108", "SLF001", "S603"]
 
 [lint.per-file-ignores]
 # no documentation for test functions and allow assert
