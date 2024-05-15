@@ -228,7 +228,7 @@ class PtychoTomo(TomoExpt):
             self.metadata.rotation_angle,
             strict=False,
         ):
-            pty_file.id_angle = rot_ang
+            pty_file._id_angle = rot_ang
 
         if self.sort_by_angle:
             self._projections = sorted(
