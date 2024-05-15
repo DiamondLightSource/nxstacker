@@ -30,10 +30,11 @@ HELP_UNWRAP_PHASE = "unwrap the phase"
 HELP_REMOVE_RAMP = "remove the phase ramp"
 HELP_MEDI_NORM = "normalise the phase by shifting its median"
 
+
 def parse():
+    """Parse arguments from command-line interface."""
     parser = argparse.ArgumentParser(add_help=True)
-    subparsers = parser.add_subparsers(help=HELP_EXPT,
-                                       dest="experiment_type")
+    subparsers = parser.add_subparsers(help=HELP_EXPT, dest="experiment_type")
 
     # shared flags among different parsers
     parser_common = _parser_common()
@@ -74,17 +75,19 @@ def parse():
 
     return args_dict
 
+
 def _parser_common():
     parser = argparse.ArgumentParser(add_help=False)
 
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help=NIMPL)
+    parser.add_argument("-v", "--verbose", action="store_true", help=NIMPL)
     parser.add_argument("--dry-run", action="store_true", help=NIMPL)
 
-    parser.add_argument("--proj-dir", type=Path, default=Path(),
-                        help=HELP_PROJ_DIR)
-    parser.add_argument("--nxtomo-dir", type=Path, default=Path(),
-                        help=HELP_NXTOMO_DIR)
+    parser.add_argument(
+        "--proj-dir", type=Path, default=Path(), help=HELP_PROJ_DIR
+    )
+    parser.add_argument(
+        "--nxtomo-dir", type=Path, default=Path(), help=HELP_NXTOMO_DIR
+    )
     parser.add_argument("--raw-dir", type=Path, help=HELP_RAW_DIR)
     parser.add_argument("--facility", type=str, help=HELP_FACILITY)
 
@@ -100,52 +103,85 @@ def _parser_common():
     parser.add_argument("--angle-list", type=Path, help=HELP_ANGLE_LIST)
     parser.add_argument("--exclude-angle", type=str, help=HELP_EXCLUDE_ANGLE)
 
-    parser.add_argument("--sort-by-angle", action="store_true", default=False,
-                        help=HELP_SORT_BY_ANGLE)
-    parser.add_argument("--pad-to-max", action="store_true", default=True,
-                        help=HELP_PAD_TO_MAX)
-    parser.add_argument("--compress", action="store_true", default=False,
-                        help=HELP_COMPRESS)
+    parser.add_argument(
+        "--sort-by-angle",
+        action="store_true",
+        default=False,
+        help=HELP_SORT_BY_ANGLE,
+    )
+    parser.add_argument(
+        "--pad-to-max", action="store_true", default=True, help=HELP_PAD_TO_MAX
+    )
+    parser.add_argument(
+        "--compress", action="store_true", default=False, help=HELP_COMPRESS
+    )
 
     return parser
+
 
 def _parser_dpc(subparsers, **kwargs):
     subparser = subparsers.add_parser("dpc", help="for DPC", **kwargs)
     subparser.add_argument("--retrieval-method")
 
+
 def _parser_xrf(subparsers, **kwargs):
     subparser = subparsers.add_parser("xrf", help="for XRF", **kwargs)
     subparser.add_argument("--transition")
 
+
 def _parser_ptycho(subparsers, **kwargs):
-    subparser = subparsers.add_parser("ptycho", help="for ptychography",
-                                      **kwargs)
-    subparser.add_argument("--save-complex", action="store_true",
-                           default=False, help=HELP_SAVE_COMPLEX)
-    subparser.add_argument("--save-modulus", action="store_true",
-                           default=False, help=HELP_SAVE_MODULUS)
-    subparser.add_argument("--save-phase", action="store_true", default=True,
-                           help=HELP_SAVE_PHASE)
-    subparser.add_argument("--remove-ramp", action="store_true", default=False,
-                           help=HELP_REMOVE_RAMP)
-    subparser.add_argument("--median-norm", action="store_true", default=False,
-                           help=HELP_MEDI_NORM)
-    subparser.add_argument("--unwrap-phase", action="store_true",
-                           default=False, help=HELP_UNWRAP_PHASE)
-    subparser.add_argument("--rescale", action="store_true", default=False,
-                           help=NIMPL)
+    subparser = subparsers.add_parser(
+        "ptycho", help="for ptychography", **kwargs
+    )
+    subparser.add_argument(
+        "--save-complex",
+        action="store_true",
+        default=False,
+        help=HELP_SAVE_COMPLEX,
+    )
+    subparser.add_argument(
+        "--save-modulus",
+        action="store_true",
+        default=False,
+        help=HELP_SAVE_MODULUS,
+    )
+    subparser.add_argument(
+        "--save-phase", action="store_true", default=True, help=HELP_SAVE_PHASE
+    )
+    subparser.add_argument(
+        "--remove-ramp", action="store_true", default=False, help=NIMPL
+    )
+    subparser.add_argument(
+        "--median-norm",
+        action="store_true",
+        default=False,
+        help=HELP_MEDI_NORM,
+    )
+    subparser.add_argument(
+        "--unwrap-phase",
+        action="store_true",
+        default=False,
+        help=HELP_UNWRAP_PHASE,
+    )
+    subparser.add_argument(
+        "--rescale", action="store_true", default=False, help=NIMPL
+    )
+
 
 def _parse_identifier(args):
-    scan_pi = ProjIdentifier(args.from_scan, args.scan_list, args.exclude_scan,
-                             id_type=int)
+    scan_pi = ProjIdentifier(
+        args.from_scan, args.scan_list, args.exclude_scan, id_type=int
+    )
     include_scan = scan_pi.identifiers
 
-    proj_pi = ProjIdentifier(args.from_proj, args.proj_list, args.exclude_proj,
-                             id_type=int)
+    proj_pi = ProjIdentifier(
+        args.from_proj, args.proj_list, args.exclude_proj, id_type=int
+    )
     include_proj = proj_pi.identifiers
 
-    angle_pi = ProjIdentifier(args.from_angle, args.angle_list,
-                                   args.exclude_angle, id_type=float)
+    angle_pi = ProjIdentifier(
+        args.from_angle, args.angle_list, args.exclude_angle, id_type=float
+    )
     include_angle = angle_pi.identifiers
 
     return include_scan, include_proj, include_angle
