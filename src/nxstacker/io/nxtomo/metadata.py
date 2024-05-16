@@ -72,6 +72,8 @@ class NXtomoMetadata:
 
 
 class MetadataPtycho(NXtomoMetadata):
+    """Represent metadata for a ptycho-tomo experiment."""
+
     def __init__(self, projections, facility):
         """Initialise the ptychography metadata."""
         super().__init__(projections, facility)
@@ -82,8 +84,7 @@ class MetadataPtycho(NXtomoMetadata):
         self.sample_description = self.description_from_scan()
         self.rotation_angle = self.find_rotation_angle()
         self.detector_distance = self.find_detector_dist()
-        self.x_pixel_size = self.find_pixel_size()
-        self.y_pixel_size = self.x_pixel_size
+        self.x_pixel_size, self.y_pixel_size = self.find_pixel_size()
         self.start_time = self.start_time_from_scan()
         self.end_time = self.end_time_from_scan()
 
@@ -167,7 +168,7 @@ class MetadataPtycho(NXtomoMetadata):
             total += p.pixel_size
         pixel_size = total / len(self.projections)
 
-        return pixel_size
+        return pixel_size, pixel_size
 
     def start_time_from_scan(self):
         """Find start time."""
@@ -199,6 +200,137 @@ class MetadataPtycho(NXtomoMetadata):
                 file_finder = self.facility.nxs_file
             case "i13-1":
                 file_finder = self.facility.position_file
+            case _:
+                msg = f"Facility {self.facility.name} not supported"
+                raise ValueError(msg)
+
+        # take the end time of the last scan in the projections
+        end_proj = self.projections[-1]
+
+        end_time_f = file_finder(end_proj)
+        end_time = self.facility.end_time(end_time_f, end_proj)
+
+        return end_time
+
+
+class MetadataXRF(NXtomoMetadata):
+    """Represent metadata for a XRF-tomo experiment."""
+
+    def __init__(self, projections, facility):
+        """Initialise the XRF metadata."""
+        super().__init__(projections, facility)
+
+    def fetch_metadata(self):
+        """Find the metadata of the current projections and facility."""
+        self.title = self.title_from_scan()
+        self.sample_description = self.description_from_scan()
+        self.rotation_angle = self.find_rotation_angle()
+        self.detector_distance = self.find_detector_dist()
+        self.x_pixel_size, self.y_pixel_size = self.find_pixel_size()
+        self.start_time = self.start_time_from_scan()
+        self.end_time = self.end_time_from_scan()
+
+    def title_from_scan(self):
+        """Determine the tile from scan ID."""
+        if self.is_scan_single:
+            return f"{self.scan_start}"
+        return f"{self.scan_start}-{self.scan_end}"
+
+    def description_from_scan(self):
+        """Determine the description of the sample from projection."""
+        if descr := self.projections[0].description:
+            # all should have the same description, take the first
+            return descr
+
+        raw_dir = self.projections[0].raw_dir
+
+        return f"Tomography experiment at {raw_dir} with {self.title}"
+
+    def find_rotation_angle(self):
+        """Find rotation angle."""
+        match self.facility.name:
+            case "i14":
+                file_finder = self.facility.nxs_file
+            case _:
+                msg = f"Facility {self.facility.name} not supported"
+                raise ValueError(msg)
+
+        rotation_angles = np.empty_like(self.projections, dtype=float)
+        for k, p in enumerate(self.projections):
+            rot_f = file_finder(p)
+            rotation_angles[k] = self.facility.rotation_angle(rot_f, p)
+
+        return rotation_angles
+
+    def find_detector_dist(self):
+        """Find sample-detector distance."""
+        match self.facility.name:
+            case "i14":
+                file_finder = [self.facility.nxs_file]
+            case _:
+                msg = f"Facility {self.facility.name} not supported"
+                raise ValueError(msg)
+
+        # take the average from all metadata in the projections
+        total = 0
+        for p in self.projections:
+            for finder in file_finder:
+                dist_f = finder(p)
+
+                try:
+                    dist = self.facility.sample_detector_dist(dist_f)
+                except TypeError:
+                    # the exception raised when trying to do None[...]
+                    continue
+                else:
+                    total += dist
+                    break
+
+        distance = total / len(self.projections)
+        return distance
+
+    def find_pixel_size(self):
+        """Find pixel size."""
+        match self.facility.name:
+            case "i14":
+                file_finder = self.facility.nxs_file
+            case _:
+                msg = f"Facility {self.facility.name} not supported"
+                raise ValueError(msg)
+
+        x_px_total, y_px_total = 0, 0
+        for p in self.projections:
+            px_f = file_finder(p)
+            x_px_total += self.facility.x_pixel_size(px_f)
+            y_px_total += self.facility.y_pixel_size(px_f)
+
+        x_pixel_size = x_px_total / len(self.projections)
+        y_pixel_size = y_px_total / len(self.projections)
+
+        return x_pixel_size, y_pixel_size
+
+    def start_time_from_scan(self):
+        """Find start time."""
+        match self.facility.name:
+            case "i14":
+                file_finder = self.facility.nxs_file
+            case _:
+                msg = f"Facility {self.facility.name} not supported"
+                raise ValueError(msg)
+
+        # take the start time of the first scan in the projections
+        start_proj = self.projections[0]
+
+        start_time_f = file_finder(start_proj)
+        start_time = self.facility.start_time(start_time_f, start_proj)
+
+        return start_time
+
+    def end_time_from_scan(self):
+        """Find end time."""
+        match self.facility.name:
+            case "i14":
+                file_finder = self.facility.nxs_file
             case _:
                 msg = f"Facility {self.facility.name} not supported"
                 raise ValueError(msg)
