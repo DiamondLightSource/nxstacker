@@ -15,6 +15,7 @@ def tomojoin(
     experiment_type,
     facility=None,
     proj_dir=None,
+    proj_file=None,
     nxtomo_dir=None,
     include_scan=None,
     include_proj=None,
@@ -41,6 +42,9 @@ def tomojoin(
     proj_dir : pathlib.Path, str or None
         the directory where the projections are stored. If it is
         None, the current working directory is used. Default to None.
+    proj_file : str or None
+        the projection file with placeholder %(scan) from include_scan
+        and %(proj) from include_proj. Default to None.
     nxtomo_dir : pathlib.Path, str or None
         the directory where the NXtomo files will be saved. If it is
         None, the current working directory is used. Default to None.
@@ -80,6 +84,7 @@ def tomojoin(
         experiment_type,
         facility,
         proj_dir,
+        proj_file,
         nxtomo_dir,
         include_scan,
         include_proj,

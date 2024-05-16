@@ -8,6 +8,7 @@ NIMPL = "NOT YET IMPLEMENTED"
 HELP_EXPT = "the type of experiment"
 HELP_VERBOSE = "show more information"
 HELP_PROJ_DIR = "the directory where the projections are stored"
+HELP_PROJ_FILE = "the file path with placeholder %(scan) and/or %(proj)"
 HELP_NXTOMO_DIR = "the directory where the NXtomo file will be saved"
 HELP_RAW_DIR = "the directory where the raw files are stored"
 HELP_FACILITY = "the facility identifier, e.g. i14, i08-1, i13-1"
@@ -85,6 +86,7 @@ def _parser_common():
     parser.add_argument(
         "--proj-dir", type=Path, default=Path(), help=HELP_PROJ_DIR
     )
+    parser.add_argument("--proj-file", type=str, help=HELP_PROJ_FILE)
     parser.add_argument(
         "--nxtomo-dir", type=Path, default=Path(), help=HELP_NXTOMO_DIR
     )
