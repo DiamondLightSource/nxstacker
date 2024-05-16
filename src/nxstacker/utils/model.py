@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta, tzinfo
 from pathlib import Path
+from types import MappingProxyType
+
+import xraylib
 
 from nxstacker.parser.proj_identifier import generate_numbers
 from nxstacker.utils.facility import choose_facility_info
@@ -279,3 +282,71 @@ class PositiveNumber(FixedValue):
             raise ValueError(msg)
 
         setattr(instance, self.private_name, num)
+
+
+class XRFTransitionList(FixedValue):
+    """Represent a list of XRF transition."""
+
+    IUPAC = MappingProxyType(
+        {
+            "Ka": (xraylib.KL3_LINE, "Ka"),
+            "Kb": (xraylib.KM3_LINE, "Kb"),
+            "La": (xraylib.L3M5_LINE, "La"),
+            "Lb": (xraylib.L2M4_LINE, "Lb"),
+            "M": (xraylib.M5N7_LINE, "M"),
+        }
+    )
+
+    def __set__(self, instance, value):
+        if hasattr(instance, self.private_name):
+            msg = f"can't set attribute '{self.public_name}'"
+            raise AttributeError(msg)
+
+        # value is a comma-delimited string of transitions
+        line_groups = value.split(",")
+        for lg in line_groups:
+            self.validate(lg)
+
+        setattr(instance, self.private_name, line_groups)
+
+    def validate(self, line_group):
+        """Validate the line group."""
+        invalid_element = False
+        invalid_transition = False
+        if line_group.endswith(","):
+            msg = (
+                "Please remove the trailing comma when specifying the "
+                "transition"
+            )
+            raise ValueError(msg)
+
+        try:
+            element, transition = line_group.split("-")
+        except ValueError:
+            msg = f"The line group {line_group} is invalid."
+            raise ValueError(msg) from None
+
+        # check element
+        try:
+            xraylib.SymbolToAtomicNumber(element)
+        except ValueError:
+            invalid_element = True
+
+        # check transition
+        if transition not in self.IUPAC:
+            invalid_transition = True
+
+        # fine
+        if not invalid_element and not invalid_transition:
+            return
+
+        if invalid_element and invalid_transition:
+            msg = (
+                f"The element '{element}' and transition '{transition}' "
+                "are invalid."
+            )
+        elif invalid_element:
+            msg = f"The element '{element}' is invalid."
+        elif invalid_transition:
+            msg = f"The transition '{transition}' is invalid."
+        raise ValueError(msg)
