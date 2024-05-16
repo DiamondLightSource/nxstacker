@@ -6,3 +6,15 @@ sample_name_path:
 rotation_angle_path:
   - /entry/instrument/sample/sample_rot
   - /entry/instrument/scannables/stage1/stage1_rotation
+sample_x_value_set_path:
+  - /entry/instrument/SampleX/value_set
+  - /entry/xsp3_addetector/SampleX_value_set
+  - /entry/merlin_addetector/SampleX_value_set
+  - /entry/eiger_addetector/SampleX_value_set
+  - /entry/excalibur_addetector/SampleX_value_set
+sample_y_value_set_path:
+  - /entry/instrument/SampleY/value_set
+  - /entry/xsp3_addetector/SampleY_value_set
+  - /entry/merlin_addetector/SampleY_value_set
+  - /entry/eiger_addetector/SampleY_value_set
+  - /entry/excalibur_addetector/SampleY_value_set

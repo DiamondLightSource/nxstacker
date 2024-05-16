@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import h5py
+import numpy as np
 
 from nxstacker.facility.facility import SPECS_DIR, FacilityInfo
 from nxstacker.utils.io import dataset_from_first_valid_path
@@ -101,6 +102,54 @@ class I14(FacilityInfo):
             dist = dset[()] * 1e-3
 
         return dist
+
+    def x_pixel_size(self, px_f):
+        """Retrieve the x pixel size.
+
+        Parameters
+        ----------
+        px_f : str or pathlib.Path
+            the file from which the x pixel size is retrieved
+
+        Returns
+        -------
+        x_px_sz : float
+            the x pixel size, in m
+
+        """
+        with h5py.File(px_f, "r") as f:
+            dset = dataset_from_first_valid_path(
+                f, self.sample_x_value_set_path
+            )
+            x_value_set = dset[()]
+
+        x_px_sz = np.diff(x_value_set).mean() * 1e-3
+
+        return x_px_sz
+
+    def y_pixel_size(self, px_f):
+        """Retrieve the y pixel size.
+
+        Parameters
+        ----------
+        px_f : str or pathlib.Path
+            the file from which the y pixel size is retrieved
+
+        Returns
+        -------
+        y_px_sz : float
+            the y pixel size, in m
+
+        """
+        with h5py.File(px_f, "r") as f:
+            dset = dataset_from_first_valid_path(
+                f, self.sample_y_value_set_path
+            )
+            y_value_set = dset[()]
+
+        y_px_sz = np.diff(y_value_set).mean() * 1e-3
+
+        return y_px_sz
 
     def start_time(self, start_time_f, _):
         """Retrieve the start time.
