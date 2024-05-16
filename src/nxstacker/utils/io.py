@@ -20,11 +20,13 @@ def file_has_paths(file_path, paths):
     True or False, indicating whether it contains all the paths or not
 
     """
-    with h5py.File(file_path, "r") as f:
-        for path in paths:
-            if path not in f:
-                return False
-    return True
+    try:
+        f = h5py.File(file_path, "r")
+    except OSError:
+        # file cannot be opened
+        return False
+    else:
+        return all(path in f for path in paths)
 
 
 def top_level_dir(directory, depth=6):
