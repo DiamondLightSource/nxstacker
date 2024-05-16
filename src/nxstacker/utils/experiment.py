@@ -1,4 +1,5 @@
 from nxstacker.experiment.ptychotomo import PtychoTomo
+from nxstacker.experiment.xrftomo import XRFTomo
 from nxstacker.utils.facility import choose_facility_info
 
 
@@ -6,6 +7,7 @@ def select_tomo_expt(
     experiment_type,
     facility=None,
     proj_dir=None,
+    proj_file=None,
     nxtomo_dir=None,
     include_scan=None,
     include_proj=None,
@@ -30,6 +32,9 @@ def select_tomo_expt(
     proj_dir : Path, optional
         the directory where it stores all the projections. Default to
         None, and it will be set to the current working directory.
+    proj_file : str or None
+        the projection file with placeholder %(scan) from include_scan
+        and %(proj) from include_proj. Default to None.
     nxtomo_dir : Path, optional
         the directory where the NXtomo file will be saved. Default to
         None, and it will be set to the current working directory.
@@ -69,7 +74,7 @@ def select_tomo_expt(
     """
     # determine facility
     facility_info = choose_facility_info(
-        facility, dirs=[proj_dir, nxtomo_dir, raw_dir]
+        facility, dirs=[proj_dir, proj_file, nxtomo_dir, raw_dir]
     )
 
     match experiment_type.lower():
@@ -77,6 +82,7 @@ def select_tomo_expt(
             tomo_expt = PtychoTomo(
                 facility_info,
                 proj_dir,
+                proj_file,
                 nxtomo_dir,
                 include_scan,
                 include_proj,
@@ -88,7 +94,20 @@ def select_tomo_expt(
                 **kwargs,
             )
         case "xrf":
-            pass
+            tomo_expt = XRFTomo(
+                facility_info,
+                proj_dir,
+                proj_file,
+                nxtomo_dir,
+                include_scan,
+                include_proj,
+                include_angle,
+                raw_dir,
+                sort_by_angle=sort_by_angle,
+                pad_to_max=pad_to_max,
+                compress=compress,
+                **kwargs,
+            )
         case "dpc":
             pass
         case _:
