@@ -5,17 +5,15 @@ from types import MappingProxyType
 import h5py
 import numpy as np
 
-from nxstacker.utils.io import file_has_paths, top_level_dir
+from nxstacker.io.projection import ProjectionFile
+from nxstacker.utils.io import top_level_dir
 from nxstacker.utils.model import (
-    Directory,
     FilePath,
     FixedValue,
-    PositiveNumber,
 )
-from nxstacker.utils.parse import quote_iterable
 
 
-class PtyPyFile:
+class PtyPyFile(ProjectionFile):
     """Represent a PtyPy reconstruction file."""
 
     experiment = "ptychography"
@@ -29,7 +27,6 @@ class PtyPyFile:
     )
     essential_paths = tuple(path_names.values())
     extensions = (".ptyr",)
-    file_path = FilePath(must_exist=True)
     scan_name = FixedValue()
     storage_name = FixedValue()
     object_path = FixedValue()
@@ -37,14 +34,6 @@ class PtyPyFile:
     raw_file_path = FixedValue()
     px_sz_path = FixedValue()
     raw_file = FilePath(must_exist=True)
-    id_scan = FixedValue()
-    id_proj = FixedValue()
-    id_angle = FixedValue()
-    distance = PositiveNumber(float)
-    pixel_size = PositiveNumber(float)
-    description = FixedValue()
-    trim_proj = FixedValue()
-    raw_dir = Directory(undefined_ok=True, must_exist=True)
     object_shape = FixedValue()
     object_complex_dtype = FixedValue()
     object_modulus_dtype = FixedValue()
@@ -69,7 +58,7 @@ class PtyPyFile:
         Parameters
         ----------
         file_path : pathlib.Path or str
-            the file path of the reconstruction file.
+            see ProjectionFile
         id_scan : str or None, optional
             the scan identifier of the reconstruction. If it is None, it
             tries to fetch this from the file and its attributes.
@@ -79,49 +68,28 @@ class PtyPyFile:
             None, it tries to fetch this from the file and its
             attributes. Default to None.
         verify : bool, optional
-            whether to verify the reconstruction file contains a minimum
-            set of keys specific to the software from it is produced.
-            Default to True.
+            see ProjectionFile
         raw_dir : pathlib.Path or str, optional
-            the directory that stores the raw data of this
-            reconstruction.  Default to None, and it will be deduced
-            from the attributes of the reconstruction file.
+            see ProjectionFile
         description : str, optional
-            a meaningful description about the sample of the
-            reconstruction. Default to None.
+            see ProjectionFile
 
         """
-        self.file_path = file_path
-
-        if verify and not self.verify_file():
-            paths = quote_iterable(self.essential_paths)
-            msg = (
-                f"The file {self._file_path} is not a reconstruction "
-                f"from {self.software}. Does the file have all the "
-                f"following path names: {paths}?"
-            )
-            raise KeyError(msg)
+        super().__init__(
+            file_path, verify=verify, raw_dir=raw_dir, description=description
+        )
 
         self._compose_paths()
 
         if id_scan is None:
-            self.id_scan = self._retrieve_id_scan()
+            self._id_scan = self._retrieve_id_scan()
         else:
-            self.id_scan = str(id_scan)
+            self._id_scan = str(id_scan)
 
         if id_proj is None:
-            self.id_proj = self._retrieve_id_proj()
+            self._id_proj = self._retrieve_id_proj()
         else:
-            self.id_proj = str(id_proj)
-
-        # the rotation angle is not known at this stage
-        # this is available from the raw data file and retrieval of it
-        # depends on the facility
-        self.id_angle = None
-
-        self.raw_dir = raw_dir
-        self.description = description
-        self.trim_proj = True
+            self._id_proj = str(id_proj)
 
     def fill_attr(self):
         """Assign attributes as determined from the file."""
@@ -284,10 +252,6 @@ class PtyPyFile:
             self.probe_modulus_dtype = np.float64
             self.probe_phase_dtype = np.float64
 
-    def verify_file(self):
-        """Check existence of some essential hdf5 paths."""
-        return file_has_paths(self._file_path, self.essential_paths)
-
     @property
     def avail_complex(self):
         """Indicate whether the complex object/probe is available."""
@@ -302,17 +266,3 @@ class PtyPyFile:
     def avail_phase(self):
         """Indicate whether the phase of object/probe is available."""
         return True
-
-    def __str__(self):
-        return f"{self.software} file: {self._file_path}"
-
-    def __repr__(self):
-        cls_name = type(self).__name__
-        id_angle = (
-            f"id_angle={self._id_angle}" if self._id_angle is not None else ""
-        )
-        return (
-            f"{cls_name}(file_path='{self._file_path}',"
-            f"id_scan='{self._id_scan}',"
-            f"id_proj='{self._id_proj}'{id_angle})"
-        )
