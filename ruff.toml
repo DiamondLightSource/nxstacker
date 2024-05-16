@@ -23,7 +23,7 @@ lint.select = ["ALL"]
 # SLF001, access to private function often is needed although not good
 # S603, hard to validate input
 # COM812, ISC001, suggested by formatter
-lint.ignore = ["D", "ANN", "PERF", "C90", "D203", "D213", "D100", "D105",
+lint.ignore = ["ANN", "PERF", "C90", "D203", "D213", "D100", "D105",
     "T20", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "N803", "N806",
     "RET504", "SIM108", "SLF001", "S603", "COM812", "ISC001"]
 
