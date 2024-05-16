@@ -7,11 +7,17 @@ This module provides:
 
 from contextlib import suppress
 from functools import cached_property
+from itertools import chain
+from pathlib import Path
+from types import MappingProxyType
+
+import numpy as np
 
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 from nxstacker.utils.model import (
     Directory,
     ExperimentFacility,
+    FilePath,
     FixedValue,
     IdentifierRange,
 )
@@ -23,13 +29,16 @@ class TomoExpt:
     name = "tomography"
     short_name = "tomo"
     angle_tol = 1e-3
+    supported_software = MappingProxyType({})
     proj_dir = Directory(must_exist=True)
+    proj_file = FilePath(undefined_ok=True)
     nxtomo_dir = Directory()
     raw_dir = Directory(undefined_ok=True, must_exist=True)
     facility = ExperimentFacility()
     include_scan = IdentifierRange(int)
     include_proj = IdentifierRange(int)
     include_angle = IdentifierRange(float)
+    proj_from_placeholder = FixedValue()
     projections = FixedValue()
     stack_shape = FixedValue()
     sort_by_angle = FixedValue()
@@ -41,6 +50,7 @@ class TomoExpt:
         self,
         facility,
         proj_dir,
+        proj_file,
         nxtomo_dir,
         include_scan,
         include_proj,
@@ -52,6 +62,7 @@ class TomoExpt:
     ):
         """Initialise a tomography experiment."""
         self.proj_dir = proj_dir
+        self.proj_file = proj_file
         self.nxtomo_dir = nxtomo_dir
         self.raw_dir = raw_dir
 
@@ -60,15 +71,16 @@ class TomoExpt:
         self.include_scan = include_scan
         self.include_proj = include_proj
         self.include_angle = include_angle
+        self.proj_from_placeholder = self._substitute_placeholder_in_proj_dir()
 
-        self._sort_by_angle = sort_by_angle
-        self._pad_to_max = pad_to_max
-        self._compress = compress
+        self.sort_by_angle = sort_by_angle
+        self.pad_to_max = pad_to_max
+        self.compress = compress
 
-        self._projections = []
-        self._stack_shape = ()
+        self.projections = []
+        self.stack_shape = ()
 
-        self._metadata = None
+        self.metadata = None
 
     def create_minimal_nxtomo(self, filename, stack_shape, stack_dtype):
         """Create a minimal NXtomo file."""
@@ -109,6 +121,82 @@ class TomoExpt:
                 f"{self.metadata.scan_end}"
             )
         return prefix
+
+    def _supported_extensions(self):
+        return list(
+            chain.from_iterable(
+                [
+                    file_type.extensions
+                    for file_type in self.supported_software.values()
+                ],
+            ),
+        )
+
+    def _substitute_placeholder_in_proj_dir(self):
+        if "%(scan)" in str(self.proj_file) or "%(proj)" in str(
+            self.proj_file
+        ):
+            if self.include_scan and self.include_proj:
+                scan_substituted = [
+                    str(self.proj_file).replace("%(scan)", scan)
+                    for scan in self.include_scan
+                ]
+                proj_files = []
+                for scan_sub in scan_substituted:
+                    proj_files.extend(
+                        [
+                            Path(scan_sub.replace("%(proj)", proj))
+                            for proj in self.include_proj
+                        ]
+                    )
+            elif self.include_scan and not self.include_proj:
+                proj_files = [
+                    Path((str(self.proj_file)).replace("%(scan)", scan))
+                    for scan in self.include_scan
+                ]
+            elif not self.include_scan and self.include_proj:
+                proj_files = [
+                    Path((str(self.proj_file)).replace("%(proj)", proj))
+                    for proj in self.include_proj
+                ]
+            else:
+                proj_files = ()
+        else:
+            proj_files = self.proj_file
+
+        return proj_files
+
+    def _save_proj_to_dset(self, fh, proj_index, proj, angle):
+        proj_dset = fh[self.proj_dset_path]
+        proj_dset[proj_index, :, :] = proj
+
+        rot_ang_dset = fh[self.rot_ang_dset_path]
+        rot_ang_dset[proj_index] = angle
+
+    def _resize_proj(self, proj, stack_shape):
+        proj_y, proj_x = proj.shape
+        stack_y, stack_x = stack_shape[1:]
+
+        if self.pad_to_max and (proj_y < stack_y or proj_x < stack_x):
+            # pad to stack shape if the projection is smaller than
+            # others
+            y_diff = stack_y - proj_y
+            top = y_diff // 2
+            bottom = top + y_diff % 2
+
+            x_diff = stack_x - proj_x
+            left = x_diff // 2
+            right = left + x_diff % 2
+
+            final = np.pad(
+                proj,
+                ((top, bottom), (left, right)),
+                mode="symmetric",
+            )
+        else:
+            final = proj
+
+        return final
 
     @property
     def num_projections(self):

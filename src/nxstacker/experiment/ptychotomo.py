@@ -1,6 +1,5 @@
 from collections import deque
 from contextlib import nullcontext
-from itertools import chain
 from types import MappingProxyType
 
 import h5py
@@ -43,6 +42,7 @@ class PtychoTomo(TomoExpt):
         self,
         facility,
         proj_dir,
+        proj_file,
         nxtomo_dir,
         include_scan,
         include_proj,
@@ -66,6 +66,9 @@ class PtychoTomo(TomoExpt):
         proj_dir : pathlib.Path, str or None
             the directory where the projections are stored. If it is
             None, the current working directory is used.
+        proj_file : str or None
+            the projection file with placeholder %(scan) from
+            include_scan and %(proj) from include_proj. Default to None.
         nxtomo_dir : pathlib.Path, str or None
             the directory where the NXtomo files will be saved. If it is
             None, the current working directory is used.
@@ -103,6 +106,7 @@ class PtychoTomo(TomoExpt):
         super().__init__(
             facility,
             proj_dir,
+            proj_file,
             nxtomo_dir,
             include_scan,
             include_proj,
@@ -130,8 +134,13 @@ class PtychoTomo(TomoExpt):
         """
         pty_files = deque()
 
-        extensions = self._supported_extensions()
-        for fp in self.proj_dir.glob(f"**/*[{','.join(extensions)}]"):
+        if self.proj_from_placeholder:
+            file_iter = self.proj_from_placeholder
+        else:
+            extensions = self._supported_extensions()
+            file_iter = self.proj_dir.glob(f"**/*[{','.join(extensions)}]")
+
+        for fp in file_iter:
             # look at the keys of the file to determine its type
             if h5py.is_hdf5(fp):
                 if file_has_paths(fp, PtyPyFile.essential_paths):
@@ -157,16 +166,6 @@ class PtychoTomo(TomoExpt):
                         pty_files.append(pty_file)
 
         self._projections = self._preliminary_sort(pty_files)
-
-    def _supported_extensions(self):
-        return list(
-            chain.from_iterable(
-                [
-                    file_type.extensions
-                    for file_type in self.supported_software.values()
-                ],
-            ),
-        )
 
     def _preliminary_sort(self, files):
         software = {file.software for file in files}
@@ -293,13 +292,13 @@ class PtychoTomo(TomoExpt):
                     ob_cplx = pty_file.object_complex(mode=mode)
 
                     if f_cplx:
-                        complex_ = self._resize_proj(ob_cplx)
+                        complex_ = self._resize_proj(ob_cplx, self.stack_shape)
 
                         self._save_proj_to_dset(f_cplx, k, complex_, rot_ang)
 
                     if f_modl:
                         ob_modl = np.abs(ob_cplx)
-                        modulus = self._resize_proj(ob_modl)
+                        modulus = self._resize_proj(ob_modl, self.stack_shape)
 
                         self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
 
@@ -313,7 +312,7 @@ class PtychoTomo(TomoExpt):
                             )
 
                         ob_phas = np.angle(ob_cplx)
-                        phase = self._resize_proj(ob_phas)
+                        phase = self._resize_proj(ob_phas, self.stack_shape)
                         if self._unwrap_phase:
                             phase = unwrap_phase(phase)
 
@@ -322,7 +321,7 @@ class PtychoTomo(TomoExpt):
                     # complex not availabe, only save modulus/phase
                     if f_modl:
                         ob_modl = pty_file.object_modulus(mode=mode)
-                        modulus = self._resize_proj(ob_modl)
+                        modulus = self._resize_proj(ob_modl, self.stack_shape)
 
                         self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
 
@@ -331,7 +330,7 @@ class PtychoTomo(TomoExpt):
                             # log warning here
                             pass
                         ob_phas = pty_file.object_phase(mode=mode)
-                        phase = self._resize_proj(ob_phas)
+                        phase = self._resize_proj(ob_phas, self.stack_shape)
                         if self._unwrap_phase:
                             phase = unwrap_phase(phase)
 
@@ -430,35 +429,3 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
-
-    def _save_proj_to_dset(self, fh, proj_index, proj, angle):
-        proj_dset = fh[self.proj_dset_path]
-        proj_dset[proj_index, :, :] = proj
-
-        rot_ang_dset = fh[self.rot_ang_dset_path]
-        rot_ang_dset[proj_index] = angle
-
-    def _resize_proj(self, proj):
-        proj_y, proj_x = proj.shape
-        stack_y, stack_x = self._stack_shape[1:]
-
-        if self.pad_to_max and (proj_y < stack_y or proj_x < stack_x):
-            # pad to stack shape if the projection is smaller than
-            # others
-            y_diff = stack_y - proj_y
-            top = y_diff // 2
-            bottom = top + y_diff % 2
-
-            x_diff = stack_x - proj_x
-            left = x_diff // 2
-            right = left + x_diff % 2
-
-            final = np.pad(
-                proj,
-                ((top, bottom), (left, right)),
-                mode="symmetric",
-            )
-        else:
-            final = proj
-
-        return final
