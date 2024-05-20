@@ -10,6 +10,7 @@ dependencies = [
   "hdf5plugin",
   "numpy",
   "scikit-image",
+  "xraylib",
 ]
 requires-python = " >=3.10 "
 description = "An utility to produce NeXus-compliance file from a stack"
