@@ -30,6 +30,10 @@ HELP_SAVE_PHASE = "save the phase result from ptychography"
 HELP_UNWRAP_PHASE = "unwrap the phase"
 HELP_REMOVE_RAMP = "remove the phase ramp"
 HELP_MEDI_NORM = "normalise the phase by shifting its median"
+HELP_TRANSITION = (
+    "a comma-delimited string of transition in the format of "
+    "<ELEMENT>-<TRANSITION>"
+)
 
 
 def parse():
@@ -128,7 +132,7 @@ def _parser_dpc(subparsers, **kwargs):
 
 def _parser_xrf(subparsers, **kwargs):
     subparser = subparsers.add_parser("xrf", help="for XRF", **kwargs)
-    subparser.add_argument("--transition")
+    subparser.add_argument("--transition", type=str, help=HELP_TRANSITION)
 
 
 def _parser_ptycho(subparsers, **kwargs):
