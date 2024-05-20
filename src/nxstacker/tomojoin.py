@@ -3,6 +3,7 @@ import time
 from nxstacker.parser.parser import parse
 from nxstacker.utils.experiment import select_tomo_expt
 from nxstacker.utils.logger import logger
+from nxstacker.utils.parse import parse_identifier
 
 
 def tomojoin_entry():
@@ -17,9 +18,15 @@ def tomojoin(
     proj_dir=None,
     proj_file=None,
     nxtomo_dir=None,
-    include_scan=None,
-    include_proj=None,
-    include_angle=None,
+    from_scan=None,
+    scan_list=None,
+    exclude_scan=None,
+    from_proj=None,
+    proj_list=None,
+    exclude_proj=None,
+    from_angle=None,
+    angle_list=None,
+    exclude_angle=None,
     raw_dir=None,
     *,
     sort_by_angle=False,
@@ -48,18 +55,31 @@ def tomojoin(
     nxtomo_dir : pathlib.Path, str or None
         the directory where the NXtomo files will be saved. If it is
         None, the current working directory is used. Default to None.
-    include_scan : str, iterable or None
-        the identifiers of scans to include in the NXtomo file. If
-        it is a str, it is passed to generate_numbers; if it is an
-        iterable, it will convert to a tuple; if it is None, it will
-        be an empty tuple. Default to None.
-    include_proj : str, iterable or None
-        the identifiers of projections to include in the NXtomo
-        file. See "include_scan". Default to None.
-    include_angle : str, iterable or None
-        the rotation angles to be included in the NXtomo file. Use
-        this with caution as it might suffer from float-point
-        precision issue.  See "include_scan". Default to None.
+    from_scan : str or None
+        the string specification of scan identifier with the format
+        <START>[-<END>[:<STEP>]]. Default to None, and it is empty.
+    scan_list : str or None
+        the text file with single-column scan identifier to be included.
+        Default to None, and it is empty.
+    exclude_scan : str or None
+        the scan to be excluded. Default to None, and nothing is
+        excluded.
+    from_proj : str or None
+        the projection number string specification, see 'from_scan'.
+    proj_list : str or None
+        the text file with single-column projection numbers to be
+        included.  Default to None, and it is empty.
+    exclude_proj : str or None
+        the projection to be excluded. Default to None, and nothing is
+        excluded.
+    from_angle : str or None
+        the rotation angle string specification, see 'from_scan'.
+    angle_list : str or None
+        the text file with single-column rotation angle to be included.
+        Default to None, and it is empty.
+    exclude_angle : str or None
+        the rotation angle to be excluded. Default to None, and nothing
+        is excluded.
     raw_dir : pathlib.Path, str or None, optional
         the directory where the raw data are stored. For most of the
         time this can be left as None as the raw directory is
@@ -83,6 +103,12 @@ def tomojoin(
     a list of successfully saved NXtomo files
 
     """
+    include_scan = parse_identifier(from_scan, scan_list, exclude_scan)
+    include_proj = parse_identifier(from_proj, proj_list, exclude_proj)
+    include_angle = parse_identifier(
+        from_angle, angle_list, exclude_angle, id_type=float
+    )
+
     # initiate instance for experiment
     tomo_expt = select_tomo_expt(
         experiment_type,

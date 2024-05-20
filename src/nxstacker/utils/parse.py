@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from nxstacker.parser.proj_identifier import ProjIdentifier
+
 
 def quote_iterable(iterable):
     """Produce quoted and comma-delimited string from an iterable.
@@ -98,3 +100,33 @@ def add_timezone(time_isoformat):
     tz_iso = time_with_tz.isoformat()
 
     return tz_iso
+
+
+def parse_identifier(
+    from_string=None, file_list=None, exclude=None, id_type=int
+):
+    """Parse identifier specification as a tuple.
+
+    Parameters
+    ----------
+    from_string : str, optional
+        the string specification of the identifier with the format
+        <START>[-<END>[:<STEP>]].  Default to None.
+    file_list : str, optional
+        the text file with single-column identifiers. Default to None.
+    exclude : str, optional
+        the identifier to be excluded, in the format
+        <START>[-<END>[:<STEP>]].  Default to None.
+    id_type : type, optional
+        the data type of the identifier. Default to int.
+
+    Returns
+    -------
+    to_include : tuple
+        the identifiers to be included
+
+    """
+    pi = ProjIdentifier(from_string, file_list, exclude, id_type=id_type)
+    to_include = pi.identifiers
+
+    return to_include

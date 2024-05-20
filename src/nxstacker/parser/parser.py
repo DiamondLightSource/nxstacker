@@ -1,8 +1,5 @@
 import argparse
-from contextlib import suppress
 from pathlib import Path
-
-from nxstacker.parser.proj_identifier import ProjIdentifier
 
 NIMPL = "NOT YET IMPLEMENTED"
 HELP_EXPT = "the type of experiment"
@@ -55,28 +52,8 @@ def parse():
 
     args = parser.parse_args()
 
-    # get projections that should be included
-    include_scan, include_proj, include_angle = _parse_identifier(args)
-
     # as a dict
     args_dict = vars(args)
-
-    # remove redundant keys
-    with suppress(KeyError):
-        args_dict.pop("from_scan")
-        args_dict.pop("scan_list")
-        args_dict.pop("exclude_scan")
-        args_dict.pop("from_proj")
-        args_dict.pop("proj_list")
-        args_dict.pop("exclude_proj")
-        args_dict.pop("from_angle")
-        args_dict.pop("angle_list")
-        args_dict.pop("exclude_angle")
-
-    # add useful keys
-    args_dict["include_scan"] = include_scan
-    args_dict["include_proj"] = include_proj
-    args_dict["include_angle"] = include_angle
 
     return args_dict
 
@@ -172,22 +149,3 @@ def _parser_ptycho(subparsers, **kwargs):
     subparser.add_argument(
         "--rescale", action="store_true", default=False, help=NIMPL
     )
-
-
-def _parse_identifier(args):
-    scan_pi = ProjIdentifier(
-        args.from_scan, args.scan_list, args.exclude_scan, id_type=int
-    )
-    include_scan = scan_pi.identifiers
-
-    proj_pi = ProjIdentifier(
-        args.from_proj, args.proj_list, args.exclude_proj, id_type=int
-    )
-    include_proj = proj_pi.identifiers
-
-    angle_pi = ProjIdentifier(
-        args.from_angle, args.angle_list, args.exclude_angle, id_type=float
-    )
-    include_angle = angle_pi.identifiers
-
-    return include_scan, include_proj, include_angle
