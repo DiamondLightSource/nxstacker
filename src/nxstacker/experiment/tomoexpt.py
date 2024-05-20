@@ -45,6 +45,7 @@ class TomoExpt:
     pad_to_max = FixedValue()
     compress = FixedValue()
     metadata = FixedValue()
+    nxtomo_output_files = FixedValue()
 
     def __init__(
         self,
@@ -81,6 +82,7 @@ class TomoExpt:
         self.stack_shape = ()
 
         self.metadata = None
+        self.nxtomo_output_files = []
 
     def create_minimal_nxtomo(self, filename, stack_shape, stack_dtype):
         """Create a minimal NXtomo file."""

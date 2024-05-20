@@ -78,6 +78,10 @@ def tomojoin(
     kwargs : dict, optional
         options for ptycho-tomography
 
+    Returns
+    -------
+    a list of successfully saved NXtomo files
+
     """
     # initiate instance for experiment
     tomo_expt = select_tomo_expt(
@@ -122,3 +126,5 @@ def tomojoin(
     logger.info("Finished saving NXtomo.")
     elapse = time.perf_counter() - st
     logger.info(f"The duration of saving NXtomo file: {elapse:.2f} s")
+
+    return tomo_expt.nxtomo_output_files

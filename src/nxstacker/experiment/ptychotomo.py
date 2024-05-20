@@ -336,6 +336,15 @@ class PtychoTomo(TomoExpt):
 
                         self._save_proj_to_dset(f_phas, k, phase, rot_ang)
 
+        nxtomo_files = []
+        if nxtomo_cplx is not None:
+            nxtomo_files.append(nxtomo_cplx)
+        if nxtomo_modl is not None:
+            nxtomo_files.append(nxtomo_modl)
+        if nxtomo_phas is not None:
+            nxtomo_files.append(nxtomo_phas)
+        self._nxtomo_output_files = nxtomo_files
+
     def _nxtomo_minimal(self):
         self._stack_shape = self._decide_stack_shape()
 

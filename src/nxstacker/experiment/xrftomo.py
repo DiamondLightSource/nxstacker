@@ -159,6 +159,8 @@ class XRFTomo(TomoExpt):
                     el_map = self._resize_proj(el_map, st_sh)
                     self._save_proj_to_dset(f, k, el_map, rot_ang)
 
+        self._nxtomo_output_files = nxtomo_flist
+
     def _nxtomo_minimal(self):
         nxtomo_flist = []
         stack_shapes = []
