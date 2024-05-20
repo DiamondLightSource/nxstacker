@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nxstacker"
-version = "2024.5b1"
+version = "2024.5b2"
 dependencies = [
   "h5py",
   "hdf5plugin",
