@@ -216,6 +216,11 @@ class TomoExpt:
 
         return final
 
+    def _gather_raw_dir_from_proj_file(self):
+        if self.num_projections != 0:
+            return list(dict.fromkeys(f.raw_dir for f in self.projections))
+        return [""]
+
     @property
     def num_projections(self):
         """Store the number of total projections."""
