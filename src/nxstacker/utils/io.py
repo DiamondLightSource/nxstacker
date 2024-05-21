@@ -43,7 +43,7 @@ def top_level_dir(directory, depth=6):
         the depth to be returned
 
     """
-    return Path("/".join(Path(directory).parts[:depth]))
+    return Path("/".join(Path(directory).parts[:depth])).resolve()
 
 
 def dataset_from_first_valid_path(hdf5_file, paths):
