@@ -4,8 +4,15 @@ import h5py
 import numpy as np
 
 from nxstacker.facility.facility import SPECS_DIR, FacilityInfo
-from nxstacker.utils.io import dataset_from_first_valid_path
-from nxstacker.utils.parse import add_timezone
+from nxstacker.utils.io import (
+    dataset_from_first_valid_path,
+    files_first_exist,
+)
+from nxstacker.utils.parse import (
+    add_timezone,
+    as_dls_staging_area,
+    quote_iterable,
+)
 
 
 class I14(FacilityInfo):
@@ -48,13 +55,23 @@ class I14(FacilityInfo):
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
-        nxs_f = Path(f"{raw_dir}/scan/i14-{scan_id}.nxs")
-        if nxs_f.exists():
+        standard = Path(f"{raw_dir}/scan/i14-{scan_id}.nxs")
+
+        nxs_candidates = [
+            standard,
+            as_dls_staging_area(standard),
+            Path(f"{raw_dir}/i14-{scan_id}.nxs"),
+        ]
+
+        nxs_f = files_first_exist(nxs_candidates)
+
+        if nxs_f is not None:
             return nxs_f
+
+        fs = quote_iterable(list(dict.fromkeys(nxs_candidates)))
         msg = (
-            f"The NeXus file {nxs_f} does not exist. Please "
-            "check the raw data directory and scan ID to see "
-            "if they match."
+            "No valid NeXus file can be found. These are the locations that "
+            f"have been tried: {fs}"
         )
         raise FileNotFoundError(msg)
 

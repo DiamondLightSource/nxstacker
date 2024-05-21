@@ -4,7 +4,14 @@ from pathlib import Path
 import h5py
 
 from nxstacker.facility.facility import SPECS_DIR, FacilityInfo
-from nxstacker.utils.io import dataset_from_first_valid_path
+from nxstacker.utils.io import (
+    dataset_from_first_valid_path,
+    files_first_exist,
+)
+from nxstacker.utils.parse import (
+    as_dls_staging_area,
+    quote_iterable,
+)
 
 
 class I13_1(FacilityInfo):  # noqa: N801
@@ -47,13 +54,23 @@ class I13_1(FacilityInfo):  # noqa: N801
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
-        nxs_f = Path(f"{raw_dir}/raw/{scan_id}.nxs")
-        if nxs_f.exists():
+        standard = Path(f"{raw_dir}/raw/{scan_id}.nxs")
+
+        nxs_candidates = [
+            standard,
+            as_dls_staging_area(standard),
+            Path(f"{raw_dir}/{scan_id}.nxs"),
+        ]
+
+        nxs_f = files_first_exist(nxs_candidates)
+
+        if nxs_f is not None:
             return nxs_f
+
+        fs = quote_iterable(list(dict.fromkeys(nxs_candidates)))
         msg = (
-            f"The NeXus file {nxs_f} does not exist. Please "
-            "check the raw data directory and scan ID to see "
-            "if they match."
+            "No valid NeXus file can be found. These are the locations that "
+            f"have been tried: {fs}"
         )
         raise FileNotFoundError(msg)
 
@@ -74,13 +91,24 @@ class I13_1(FacilityInfo):  # noqa: N801
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
-        pty_tomo_f = Path(f"{raw_dir}/raw/{scan_id}/raw/pty_tomo.h5")
-        if pty_tomo_f.exists():
+        standard = Path(f"{raw_dir}/raw/{scan_id}/raw/pty_tomo.h5")
+
+        pty_tomo_candidates = [
+            standard,
+            as_dls_staging_area(standard),
+            Path(f"{raw_dir}/{scan_id}/raw/pty_tomo.h5"),
+            Path(f"{raw_dir}/{scan_id}/pty_tomo.h5"),
+        ]
+
+        pty_tomo_f = files_first_exist(pty_tomo_candidates)
+
+        if pty_tomo_f is not None:
             return pty_tomo_f
+
+        fs = quote_iterable(list(dict.fromkeys(pty_tomo_candidates)))
         msg = (
-            f"The pty_tomo file {pty_tomo_f} does not exist. Please "
-            "check the raw data directory and scan ID to see "
-            "if they match."
+            "No valid pty_tomo file can be found. These are the locations "
+            f"that have been tried: {fs}"
         )
         raise FileNotFoundError(msg)
 
@@ -101,13 +129,24 @@ class I13_1(FacilityInfo):  # noqa: N801
         raw_dir = proj_file.raw_dir
         scan_id = proj_file.id_scan
 
-        pos_f = Path(f"{raw_dir}/raw/{scan_id}/raw/positions_0.h5")
-        if pos_f.exists():
+        standard = Path(f"{raw_dir}/raw/{scan_id}/raw/positions_0.h5")
+
+        pos_candidates = [
+            standard,
+            as_dls_staging_area(standard),
+            Path(f"{raw_dir}/{scan_id}/raw/positions_0.h5"),
+            Path(f"{raw_dir}/{scan_id}/positions_0.h5"),
+        ]
+
+        pos_f = files_first_exist(pos_candidates)
+
+        if pos_f is not None:
             return pos_f
+
+        fs = quote_iterable(list(dict.fromkeys(pos_candidates)))
         msg = (
-            f"The position file {pos_f} does not exist. Please "
-            "check the raw data directory and scan ID to see "
-            "if they match."
+            "No valid position file can be found. These are the locations "
+            f"that have been tried: {fs}"
         )
         raise FileNotFoundError(msg)
 
