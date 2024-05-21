@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from nxstacker.parser.proj_identifier import ProjIdentifier
 
@@ -130,3 +131,30 @@ def parse_identifier(
     to_include = pi.identifiers
 
     return to_include
+
+
+def as_dls_staging_area(visit):
+    """Return the DLS staging area from a visit.
+
+    Parameters
+    ----------
+    visit : str or pathlib.Path
+        the visit path
+
+    Returns
+    -------
+    the corresponding staging area for a visit, e.g. if the visit is
+    "/dls/xxx/data/2024" then it will return
+    "/dls/staging/xxx/data/2024". It will return the original path if
+    the visit is not a DLS visit (not starting as "/dls").
+
+    """
+    visit = Path(visit).resolve()
+
+    try:
+        without_dls = visit.relative_to("/dls")
+    except ValueError:
+        return visit
+    else:
+        staging = Path.joinpath(Path("/dls/staging"), without_dls)
+        return staging
