@@ -145,7 +145,9 @@ class PtychoTomo(TomoExpt):
             if h5py.is_hdf5(fp):
                 if file_has_paths(fp, PtyPyFile.essential_paths):
                     # for PtyPy file, projection number doesn't matter
-                    pty_file = PtyPyFile(fp, id_proj=0, verify=False)
+                    pty_file = PtyPyFile(
+                        fp, id_proj=0, verify=False, raw_dir=self.raw_dir
+                    )
 
                     to_include = pty_file.id_scan in self.include_scan
 
@@ -154,7 +156,9 @@ class PtychoTomo(TomoExpt):
                         pty_files.append(pty_file)
 
                 elif file_has_paths(fp, PtyREXFile.essential_paths):
-                    pty_file = PtyREXFile(fp, verify=False)
+                    pty_file = PtyREXFile(
+                        fp, verify=False, raw_dir=self.raw_dir
+                    )
 
                     to_include = (
                         pty_file.id_scan in self.include_scan

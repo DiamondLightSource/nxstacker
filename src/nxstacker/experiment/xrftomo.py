@@ -77,7 +77,9 @@ class XRFTomo(TomoExpt):
             if h5py.is_hdf5(fp):  # noqa: SIM102
                 if file_has_paths(fp, XRFWindowFile.essential_paths):
                     # projection number doesn't matter
-                    pty_file = XRFWindowFile(fp, id_proj=0, verify=False)
+                    pty_file = XRFWindowFile(
+                        fp, id_proj=0, verify=False, raw_dir=self.raw_dir
+                    )
 
                     to_include = pty_file.id_scan in self.include_scan
 
