@@ -64,10 +64,12 @@ def _parser_common():
     parser.add_argument("-v", "--verbose", action="store_true", help=NIMPL)
     parser.add_argument("--dry-run", action="store_true", help=NIMPL)
 
-    parser.add_argument(
+    proj_location = parser.add_mutually_exclusive_group()
+    proj_location.add_argument(
         "--proj-dir", type=Path, default=Path(), help=HELP_PROJ_DIR
     )
-    parser.add_argument("--proj-file", type=str, help=HELP_PROJ_FILE)
+    proj_location.add_argument("--proj-file", type=str, help=HELP_PROJ_FILE)
+
     parser.add_argument(
         "--nxtomo-dir", type=Path, default=Path(), help=HELP_NXTOMO_DIR
     )

@@ -103,6 +103,12 @@ def tomojoin(
     a list of successfully saved NXtomo files
 
     """
+    if (proj_dir is not None and str(proj_dir) != ".") and (
+        proj_file is not None and len(str(proj_file)) > 0
+    ):
+        msg = "proj_dir and proj_file is mutually exclusive."
+        raise ValueError(msg)
+
     include_scan = parse_identifier(from_scan, scan_list, exclude_scan)
     include_proj = parse_identifier(from_proj, proj_list, exclude_proj)
     include_angle = parse_identifier(
