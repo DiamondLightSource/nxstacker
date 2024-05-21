@@ -71,6 +71,29 @@ def dataset_from_first_valid_path(hdf5_file, paths):
     return dataset
 
 
+def files_first_exist(files):
+    """Get the first existing file path from a list of them.
+
+    Parameters
+    ----------
+    files : iterable
+        a collection of file paths. Any None or empty string will be
+        skipped.
+
+    Returns
+    -------
+    the first file path in 'files' that exists. 'None' is returned if
+    none of the files exists.
+
+    """
+    for fp in list(dict.fromkeys(files)):
+        if fp is None or fp == "":
+            continue
+        if Path(fp).exists():
+            return fp
+    return None
+
+
 def user_name():
     """Get the user name as ID or real name from database if possible.
 
