@@ -115,7 +115,7 @@ class Directory(FixedValue):
         else:
             if isinstance(value, bytes):
                 value = value.decode()
-            dir_ = Path(value)
+            dir_ = Path(value).resolve()
 
         self.validate_or_create(dir_)
         setattr(instance, self.private_name, dir_)
@@ -175,7 +175,7 @@ class FilePath(FixedValue):
         else:
             if isinstance(value, bytes):
                 value = value.decode()
-            fp = Path(value)
+            fp = Path(value).resolve()
 
         self.validate(fp)
         setattr(instance, self.private_name, fp)
