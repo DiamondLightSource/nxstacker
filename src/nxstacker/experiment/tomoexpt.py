@@ -5,6 +5,7 @@ This module provides:
             collection.
 """
 
+import re
 from contextlib import suppress
 from functools import cached_property
 from itertools import chain
@@ -163,10 +164,25 @@ class TomoExpt:
                 ]
             else:
                 proj_files = ()
+
+            self._redefine_proj_dir_from_placeholder_in_path()
         else:
             proj_files = self.proj_file
 
         return proj_files
+
+    def _redefine_proj_dir_from_placeholder_in_path(self):
+        # redefine proj_dir if there is valid placeholder
+        placeholder = re.compile(r"%\((scan|proj)\)")
+        proj_dir = "/"
+        for pt in self.proj_file.parts:
+            if re.search(placeholder, pt) is None:
+                # no valid placeholder, part of proj_dir
+                proj_dir += f"{pt}/"
+            else:
+                # reach the first placeholder
+                break
+        self._proj_dir = Path(proj_dir).resolve()
 
     def _save_proj_to_dset(self, fh, proj_index, proj, angle):
         proj_dset = fh[self.proj_dset_path]
