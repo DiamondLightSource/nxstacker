@@ -89,6 +89,10 @@ class XRFTomo(TomoExpt):
 
         self._projections = self._preliminary_sort(pty_files)
 
+        if self.num_projections == 0:
+            msg = f"No valid projection has been found in {self.proj_dir}"
+            raise RuntimeError(msg)
+
     def _preliminary_sort(self, files):
         return sorted(files, key=lambda x: int(x.id_scan))
 
