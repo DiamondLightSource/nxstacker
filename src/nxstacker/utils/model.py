@@ -302,6 +302,14 @@ class XRFTransitionList(FixedValue):
             msg = f"can't set attribute '{self.public_name}'"
             raise AttributeError(msg)
 
+        if not value:
+            if value is None:
+                problem = f"{type(None).__name__}"
+            else:
+                problem = value
+            msg = f"The transition list cannot be '{problem}'."
+            raise ValueError(msg)
+
         # value is a comma-delimited string of transitions
         line_groups = value.split(",")
         for lg in line_groups:

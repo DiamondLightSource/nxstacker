@@ -55,7 +55,7 @@ class XRFTomo(TomoExpt):
             compress=compress,
         )
 
-        self.transition = kwargs.get("transition", "W-La")
+        self.transition = kwargs.get("transition")
 
     def find_all_projections(self):
         """Find all projections.
