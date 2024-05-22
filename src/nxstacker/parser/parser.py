@@ -115,7 +115,7 @@ def _parser_common():
 
 
 def _parser_dpc(subparsers, **kwargs):
-    subparser = subparsers.add_parser("dpc", help="for DPC", **kwargs)
+    subparser = subparsers.add_parser("dpc", help=NIMPL, **kwargs)
     subparser.add_argument("--retrieval-method")
 
 
