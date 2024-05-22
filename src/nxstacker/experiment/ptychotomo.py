@@ -1,5 +1,5 @@
 from collections import deque
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 from types import MappingProxyType
 
 import h5py
@@ -448,10 +448,8 @@ class PtychoTomo(TomoExpt):
 
         return nxtomo_phas
 
-    @contextmanager
-    def log_stack_projection(self, level=None, name=None):
-        """Log the method stack_projection."""
-        st = self._log_enter_stack_projection(level, name)
+    def _log_enter_stack_projection(self, level, name):
+        st = super()._log_enter_stack_projection(level, name)
 
         if self.logger is None:
             self._logger = create_logger(level=level, name=name)
@@ -492,6 +490,4 @@ class PtychoTomo(TomoExpt):
             logger.info(unwrap_phase_msg)
         if self.rescale:
             logger.warning(rescale_msg)
-
-        yield
-        self._log_exit_stack_projection(st, level, name)
+        return st

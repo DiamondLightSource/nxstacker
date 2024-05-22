@@ -1,5 +1,4 @@
 from collections import deque
-from contextlib import contextmanager
 from types import MappingProxyType
 
 import h5py
@@ -215,10 +214,8 @@ class XRFTomo(TomoExpt):
 
         return stack_shape, stack_dtype
 
-    @contextmanager
-    def log_stack_projection(self, level=None, name=None):
-        """Log the method stack_projection."""
-        st = self._log_enter_stack_projection(level, name)
+    def _log_enter_stack_projection(self, level, name):
+        st = super()._log_enter_stack_projection(level, name)
 
         if self.logger is None:
             self._logger = create_logger(level=level, name=name)
@@ -230,5 +227,4 @@ class XRFTomo(TomoExpt):
             + "s" * (len(self.transition) > 1)
             + f" will be saved: {lg}."
         )
-        yield
-        self._log_exit_stack_projection(st, level, name)
+        return st

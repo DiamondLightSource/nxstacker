@@ -32,6 +32,7 @@ def tomojoin(
     pad_to_max=True,
     compress=False,
     quiet=False,
+    dry_run=False,
     **kwargs,
 ):
     """Combine projections to produce an NXtomo file.
@@ -97,6 +98,8 @@ def tomojoin(
         Default to False.
     quiet : bool, optional
         whether to suppress log message. Default to False.
+    dry_run : bool, optional
+        whether to perform a dry-run. Default to False.
     kwargs : dict, optional
         options for ptycho-tomography
 
@@ -111,7 +114,7 @@ def tomojoin(
         msg = "proj_dir and proj_file is mutually exclusive."
         raise ValueError(msg)
 
-    if quiet:
+    if quiet and not dry_run:
         log_level = logging.NOTSET
     else:
         log_level = logging.INFO
@@ -139,12 +142,16 @@ def tomojoin(
         **kwargs,
     )
 
-    with tomo_expt.log_find_all_projection(level=log_level):
+    with tomo_expt.log_find_all_projection(level=log_level, dry_run=dry_run):
         tomo_expt.find_all_projections()
 
     # associate projections with projection angles
     with tomo_expt.log_extract_projections_details(level=log_level):
         tomo_expt.extract_projections_details()
+
+    if dry_run:
+        tomo_expt.dry_run_msg(level=log_level)
+        return 0
 
     # stack the projections as NXtomo
     with tomo_expt.log_stack_projection(level=log_level):

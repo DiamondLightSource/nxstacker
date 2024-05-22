@@ -4,6 +4,7 @@ from pathlib import Path
 NIMPL = "NOT YET IMPLEMENTED"
 HELP_EXPT = "the type of experiment"
 HELP_QUIET = "suppress log messages"
+HELP_DRY_RUN = "perform a dry-run"
 HELP_PROJ_DIR = "the directory where the projections are stored"
 HELP_PROJ_FILE = "the file path with placeholder %%(scan) and/or %%(proj)"
 HELP_NXTOMO_DIR = "the directory where the NXtomo file will be saved"
@@ -62,7 +63,7 @@ def _parser_common():
     parser = argparse.ArgumentParser(add_help=False)
 
     parser.add_argument("-q", "--quiet", action="store_true", help=HELP_QUIET)
-    parser.add_argument("--dry-run", action="store_true", help=NIMPL)
+    parser.add_argument("--dry-run", action="store_true", help=HELP_DRY_RUN)
 
     proj_location = parser.add_mutually_exclusive_group()
     proj_location.add_argument(

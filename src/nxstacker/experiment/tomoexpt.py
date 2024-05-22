@@ -239,18 +239,22 @@ class TomoExpt:
         return [""]
 
     @contextmanager
-    def log_find_all_projection(self, level=None, name=None):
+    def log_find_all_projection(self, level=None, name=None, *, dry_run=False):
         """Log the method find_all_projections."""
-        st = self._log_enter_find_all_projections(level, name)
+        st = self._log_enter_find_all_projections(level, name, dry_run)
         yield
         self._log_exit_find_all_projections(st, level, name)
 
-    def _log_enter_find_all_projections(self, level, name):
+    def _log_enter_find_all_projections(self, level, name, dry_run):
         if self.logger is None:
             self._logger = create_logger(level=level, name=name)
         logger = self.logger
 
         logger.info("=" * 79)
+        if dry_run:
+            logger.info("This is a dry-run, no NXtomo file will be saved.")
+            logger.info("")
+
         logger.info("Start finding projections...")
         logger.info(f"The experiment was performed in {self.facility_id}.")
         logger.info(
@@ -381,6 +385,16 @@ class TomoExpt:
             "file is" if (len(self.nxtomo_output_files) == 1) else "files are"
         )
         logger.info(f"The following NXtomo {file_is_are} saved: {savedf}.")
+
+    def dry_run_msg(self, level=None, name=None):
+        """Display the dry-run message at the end."""
+        _ = self._log_enter_stack_projection(level=None, name=None)
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("")
+        logger.info("This is the end of the dry-run.")
 
     @property
     def num_projections(self):
