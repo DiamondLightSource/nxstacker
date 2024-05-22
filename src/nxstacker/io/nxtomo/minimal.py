@@ -1,14 +1,12 @@
 import sys
-from contextlib import suppress
 from datetime import datetime
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import h5py
 import numpy as np
 from hdf5plugin import Blosc
 
-from nxstacker.utils.io import user_name
+from nxstacker.utils.io import get_version, user_name
 from nxstacker.utils.model import UKtz
 
 ENTRY = "entry"
@@ -236,8 +234,7 @@ def _create_process(root):
     grp_process.attrs["NX_class"] = "NXprocess"
 
     grp_process[PROGRAM] = "nxstacker"
-    with suppress(PackageNotFoundError):
-        grp_process[VERSION] = version("nxstacker")
+    grp_process[VERSION] = get_version()
     grp_process[DATE] = (now := datetime.now(UKtz()).isoformat())
     grp_process[SEQ_IDX] = 1
 

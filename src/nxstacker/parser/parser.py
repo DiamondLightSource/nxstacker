@@ -1,10 +1,13 @@
 import argparse
 from pathlib import Path
 
+from nxstacker.utils.io import get_version
+
 NIMPL = "NOT YET IMPLEMENTED"
 HELP_EXPT = "the type of experiment"
 HELP_QUIET = "suppress log messages"
 HELP_DRY_RUN = "perform a dry-run"
+HELP_VERSION = "show the version"
 HELP_PROJ_DIR = "the directory where the projections are stored"
 HELP_PROJ_FILE = "the file path with placeholder %%(scan) and/or %%(proj)"
 HELP_NXTOMO_DIR = "the directory where the NXtomo file will be saved"
@@ -37,6 +40,12 @@ HELP_TRANSITION = (
 def parse_tomo():
     """Parse arguments from command-line interface for tomojoin."""
     parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=_display_version_str(),
+        help=HELP_VERSION,
+    )
     subparsers = parser.add_subparsers(help=HELP_EXPT, dest="experiment_type")
 
     # shared flags among different parsers
@@ -152,3 +161,8 @@ def _parser_ptycho(subparsers, **kwargs):
     subparser.add_argument(
         "--rescale", action="store_true", default=False, help=NIMPL
     )
+
+
+def _display_version_str():
+    ver = get_version()
+    return "%(prog)s " + ver

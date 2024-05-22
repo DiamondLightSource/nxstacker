@@ -1,5 +1,6 @@
 import re
 import subprocess
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import h5py
@@ -137,3 +138,19 @@ def user_name():
                 return login_name
 
             return real_name
+
+
+def get_version():
+    """Get the version number.
+
+    Returns
+    -------
+    ver : str
+        the version number
+
+    """
+    try:
+        ver = version("nxstacker")
+    except PackageNotFoundError:
+        ver = "dev"
+    return ver
