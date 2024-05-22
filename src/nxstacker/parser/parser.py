@@ -3,7 +3,7 @@ from pathlib import Path
 
 NIMPL = "NOT YET IMPLEMENTED"
 HELP_EXPT = "the type of experiment"
-HELP_VERBOSE = "show more information"
+HELP_QUIET = "suppress log messages"
 HELP_PROJ_DIR = "the directory where the projections are stored"
 HELP_PROJ_FILE = "the file path with placeholder %%(scan) and/or %%(proj)"
 HELP_NXTOMO_DIR = "the directory where the NXtomo file will be saved"
@@ -33,8 +33,8 @@ HELP_TRANSITION = (
 )
 
 
-def parse():
-    """Parse arguments from command-line interface."""
+def parse_tomo():
+    """Parse arguments from command-line interface for tomojoin."""
     parser = argparse.ArgumentParser(add_help=True)
     subparsers = parser.add_subparsers(help=HELP_EXPT, dest="experiment_type")
 
@@ -61,7 +61,7 @@ def parse():
 def _parser_common():
     parser = argparse.ArgumentParser(add_help=False)
 
-    parser.add_argument("-v", "--verbose", action="store_true", help=NIMPL)
+    parser.add_argument("-q", "--quiet", action="store_true", help=HELP_QUIET)
     parser.add_argument("--dry-run", action="store_true", help=NIMPL)
 
     proj_location = parser.add_mutually_exclusive_group()

@@ -1,14 +1,13 @@
-import time
+import logging
 
-from nxstacker.parser.parser import parse
+from nxstacker.parser.parser import parse_tomo
 from nxstacker.utils.experiment import select_tomo_expt
-from nxstacker.utils.logger import logger
 from nxstacker.utils.parse import parse_identifier
 
 
 def tomojoin_entry():
     """Entry point for tomojoin."""
-    args = parse()
+    args = parse_tomo()
     tomojoin(**args)
 
 
@@ -32,6 +31,7 @@ def tomojoin(
     sort_by_angle=False,
     pad_to_max=True,
     compress=False,
+    quiet=False,
     **kwargs,
 ):
     """Combine projections to produce an NXtomo file.
@@ -95,6 +95,8 @@ def tomojoin(
     compress : bool, optional
         whether to apply compression (Blosc) to the NXtomo file.
         Default to False.
+    quiet : bool, optional
+        whether to suppress log message. Default to False.
     kwargs : dict, optional
         options for ptycho-tomography
 
@@ -108,6 +110,11 @@ def tomojoin(
     ):
         msg = "proj_dir and proj_file is mutually exclusive."
         raise ValueError(msg)
+
+    if quiet:
+        log_level = logging.NOTSET
+    else:
+        log_level = logging.INFO
 
     include_scan = parse_identifier(from_scan, scan_list, exclude_scan)
     include_proj = parse_identifier(from_proj, proj_list, exclude_proj)
@@ -132,31 +139,15 @@ def tomojoin(
         **kwargs,
     )
 
-    logger.info("Start finding projections...")
-    st = time.perf_counter()
-
-    tomo_expt.find_all_projections()
-
-    logger.info("Finished finding projections.")
-    elapse = time.perf_counter() - st
-    logger.info(f"The duration of finding projections: {elapse:.2f} s")
-    logger.info(f"{tomo_expt.num_projections} projections have been found.")
-    logger.info(
-        f"The raw data directory is " f"{tomo_expt.projections[0].raw_dir}"
-    )
+    with tomo_expt.log_find_all_projection(level=log_level):
+        tomo_expt.find_all_projections()
 
     # associate projections with projection angles
-    tomo_expt.extract_projections_details()
+    with tomo_expt.log_extract_projections_details(level=log_level):
+        tomo_expt.extract_projections_details()
 
     # stack the projections as NXtomo
-    logger.info("Start saving NXtomo file...")
-    logger.info(f"The directory of the NXtomo file is {tomo_expt.nxtomo_dir}")
-    st = time.perf_counter()
-
-    tomo_expt.stack_projection()
-
-    logger.info("Finished saving NXtomo.")
-    elapse = time.perf_counter() - st
-    logger.info(f"The duration of saving NXtomo file: {elapse:.2f} s")
+    with tomo_expt.log_stack_projection(level=log_level):
+        tomo_expt.stack_projection()
 
     return tomo_expt.nxtomo_output_files

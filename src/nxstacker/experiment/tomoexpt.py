@@ -6,7 +6,8 @@ This module provides:
 """
 
 import re
-from contextlib import suppress
+import time
+from contextlib import contextmanager, suppress
 from functools import cached_property
 from itertools import chain
 from pathlib import Path
@@ -15,6 +16,7 @@ from types import MappingProxyType
 import numpy as np
 
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
+from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import (
     Directory,
     ExperimentFacility,
@@ -22,6 +24,7 @@ from nxstacker.utils.model import (
     FixedValue,
     IdentifierRange,
 )
+from nxstacker.utils.parse import quote_iterable
 
 
 class TomoExpt:
@@ -47,6 +50,7 @@ class TomoExpt:
     compress = FixedValue()
     metadata = FixedValue()
     nxtomo_output_files = FixedValue()
+    logger = FixedValue()
 
     def __init__(
         self,
@@ -84,6 +88,19 @@ class TomoExpt:
 
         self.metadata = None
         self.nxtomo_output_files = []
+        self.logger = None
+
+    def find_all_projections(self):
+        """To be implemented in the subclass."""
+        raise NotImplementedError
+
+    def extract_projections_details(self):
+        """To be implemented in the subclass."""
+        raise NotImplementedError
+
+    def stack_projection(self):
+        """To be implemented in the subclass."""
+        raise NotImplementedError
 
     def create_minimal_nxtomo(self, filename, stack_shape, stack_dtype):
         """Create a minimal NXtomo file."""
@@ -220,6 +237,150 @@ class TomoExpt:
         if self.num_projections != 0:
             return list(dict.fromkeys(f.raw_dir for f in self.projections))
         return [""]
+
+    @contextmanager
+    def log_find_all_projection(self, level=None, name=None):
+        """Log the method find_all_projections."""
+        st = self._log_enter_find_all_projections(level, name)
+        yield
+        self._log_exit_find_all_projections(st, level, name)
+
+    def _log_enter_find_all_projections(self, level, name):
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("=" * 79)
+        logger.info("Start finding projections...")
+        logger.info(f"The experiment was performed in {self.facility_id}.")
+        logger.info(
+            f"The type of tomography experiment is {self.name} "
+            f"({self.short_name})."
+        )
+        logger.info(
+            f"The directory to look for projections is '{self.proj_dir}'."
+        )
+        st = time.perf_counter()
+        return st
+
+    def _log_exit_find_all_projections(self, st, level, name):
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("Finished finding projections.")
+        elapse = time.perf_counter() - st
+        logger.info(f"The duration of finding projections: {elapse:.2f} s")
+        logger.info(f"{self.num_projections} projections have been found.")
+
+        if self.raw_dir is not None:
+            logger.info(
+                f"The provided raw data directory is '{self.raw_dir}'."
+            )
+        else:
+            logger.info(
+                "No raw data directory is provided and it will be "
+                "deduced from the projection files."
+            )
+
+    @contextmanager
+    def log_extract_projections_details(self, level=None, name=None):
+        """Log the method extract_projections_details."""
+        st = self._log_enter_extract_projections_details(level, name)
+        yield
+        self._log_exit_extract_projections_details(st, level, name)
+
+    def _log_enter_extract_projections_details(self, level, name):
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("=" * 79)
+        logger.info("Start extracting projection metadata...")
+        st = time.perf_counter()
+        return st
+
+    def _log_exit_extract_projections_details(self, st, level, name):
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("Finished extracting projection metadata.")
+        elapse = time.perf_counter() - st
+        logger.info(
+            "The duration of extraction projections metadata: "
+            f"{elapse:.2f} s"
+        )
+        logger.info(f"The title is '{self.metadata.title}'.")
+        logger.info(
+            f"The sample description is "
+            f"'{self.metadata.sample_description}'."
+        )
+        logger.info(
+            "The detector distance is {self.metadata.detector_distance:.3e} m."
+        )
+        logger.info(f"The x pixel size is {self.metadata.x_pixel_size:.3e} m.")
+        logger.info(f"The y pixel size is {self.metadata.y_pixel_size:.3e} m.")
+        logger.info(f"The start time is {self.metadata.start_time}.")
+        logger.info(f"The end time is {self.metadata.end_time}.")
+
+        if self.raw_dir is None:
+            raw_dirs = self._gather_raw_dir_from_proj_file()
+            rd = quote_iterable(raw_dirs)
+            dir_is_are = (
+                "directory is" if (len(raw_dirs) == 1) else "directories are"
+            )
+            logger.info(f"The deduced raw data {dir_is_are} {rd}.")
+
+    @contextmanager
+    def log_stack_projection(self, level=None, name=None):
+        """Log the method stack_projection."""
+        st = self._log_enter_stack_projection(level, name)
+        yield
+        self._log_exit_stack_projection(st, level, name)
+
+    def _log_enter_stack_projection(self, level, name):
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("=" * 79)
+        logger.info("Start saving NXtomo file...")
+        logger.info(
+            f"The directory of the NXtomo file is '{self.nxtomo_dir}'."
+        )
+
+        compress_msg = (
+            "The NXtomo file will "
+            + "not " * (not self.compress)
+            + "be compressed."
+        )
+        logger.info(compress_msg)
+
+        pad_msg = (
+            "The projection will "
+            + "not " * (not self.pad_to_max)
+            + "be padded to the maximum dimension of the stack."
+        )
+        logger.info(pad_msg)
+
+        st = time.perf_counter()
+        return st
+
+    def _log_exit_stack_projection(self, st, level, name):
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        logger.info("Finished saving NXtomo.")
+        elapse = time.perf_counter() - st
+        logger.info(f"The duration of saving NXtomo file: {elapse:.2f} s")
+
+        savedf = quote_iterable(self.nxtomo_output_files)
+        file_is_are = (
+            "file is" if (len(self.nxtomo_output_files) == 1) else "files are"
+        )
+        logger.info(f"The following NXtomo {file_is_are} saved: {savedf}.")
 
     @property
     def num_projections(self):

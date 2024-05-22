@@ -1,4 +1,5 @@
 from collections import deque
+from contextlib import contextmanager
 from types import MappingProxyType
 
 import h5py
@@ -8,8 +9,9 @@ from nxstacker.experiment.tomoexpt import TomoExpt
 from nxstacker.io.nxtomo.metadata import MetadataXRF
 from nxstacker.io.xrf.python_processing import XRFWindowFile
 from nxstacker.utils.io import file_has_paths
+from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import XRFTransitionList
-from nxstacker.utils.parse import unique_or_raise
+from nxstacker.utils.parse import quote_iterable, unique_or_raise
 
 
 class XRFTomo(TomoExpt):
@@ -212,3 +214,21 @@ class XRFTomo(TomoExpt):
         )
 
         return stack_shape, stack_dtype
+
+    @contextmanager
+    def log_stack_projection(self, level=None, name=None):
+        """Log the method stack_projection."""
+        st = self._log_enter_stack_projection(level, name)
+
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        lg = quote_iterable(self.transition)
+        logger.info(
+            "The following line group"
+            + "s" * (len(self.transition) > 1)
+            + f" will be saved: {lg}."
+        )
+        yield
+        self._log_exit_stack_projection(st, level, name)

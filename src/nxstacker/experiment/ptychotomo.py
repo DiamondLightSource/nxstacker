@@ -1,5 +1,5 @@
 from collections import deque
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from types import MappingProxyType
 
 import h5py
@@ -10,6 +10,7 @@ from nxstacker.io.nxtomo.metadata import MetadataPtycho
 from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
 from nxstacker.utils.io import file_has_paths
+from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import FixedValue
 from nxstacker.utils.parse import quote_iterable, unique_or_raise
 from nxstacker.utils.ptychography import (
@@ -446,3 +447,51 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    @contextmanager
+    def log_stack_projection(self, level=None, name=None):
+        """Log the method stack_projection."""
+        st = self._log_enter_stack_projection(level, name)
+
+        if self.logger is None:
+            self._logger = create_logger(level=level, name=name)
+        logger = self.logger
+
+        complex_msg = (
+            "The complex reconstruction will "
+            + "not " * (not self.save_complex)
+            + "be saved."
+        )
+        modulus_msg = (
+            "The modulus will "
+            + "not " * (not self.save_modulus)
+            + "be saved."
+        )
+        phase_msg = (
+            "The phase will " + "not " * (not self.save_phase) + "be saved."
+        )
+        phase_ramp_msg = "Phase ramp removal is not yet implemented."
+        median_norm_msg = (
+            "The phase will "
+            + "not " * (not self.median_norm)
+            + "be shifted by its median."
+        )
+        unwrap_phase_msg = (
+            "The phase will "
+            + "not " * (not self.unwrap_phase)
+            + "be unwrapped."
+        )
+        rescale_msg = "Rescale is not yet implemented."
+        logger.info(complex_msg)
+        logger.info(modulus_msg)
+        logger.info(phase_msg)
+        if self.save_phase:
+            if self.remove_ramp:
+                logger.warning(phase_ramp_msg)
+            logger.info(median_norm_msg)
+            logger.info(unwrap_phase_msg)
+        if self.rescale:
+            logger.warning(rescale_msg)
+
+        yield
+        self._log_exit_stack_projection(st, level, name)
