@@ -250,7 +250,7 @@ class TomoExpt:
             self._logger = create_logger(level=level, name=name)
         logger = self.logger
 
-        logger.info("=" * 79)
+        logger.info("")
         if dry_run:
             logger.info("This is a dry-run, no NXtomo file will be saved.")
             logger.info("")
@@ -299,7 +299,7 @@ class TomoExpt:
             self._logger = create_logger(level=level, name=name)
         logger = self.logger
 
-        logger.info("=" * 79)
+        logger.info("")
         logger.info("Start extracting projection metadata...")
         st = time.perf_counter()
         return st
@@ -348,7 +348,7 @@ class TomoExpt:
             self._logger = create_logger(level=level, name=name)
         logger = self.logger
 
-        logger.info("=" * 79)
+        logger.info("")
         logger.info("Start saving NXtomo file...")
         logger.info(
             f"The directory of the NXtomo file is '{self.nxtomo_dir}'."
