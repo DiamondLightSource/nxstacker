@@ -176,6 +176,8 @@ class PtychoTomo(TomoExpt):
             msg = f"No valid projection has been found in {self.proj_dir}"
             raise RuntimeError(msg)
 
+        _ = self.check_missing_projections()
+
     def _preliminary_sort(self, files):
         software = {file.software for file in files}
         self._check_software_num(software)

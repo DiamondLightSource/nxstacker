@@ -238,6 +238,55 @@ class TomoExpt:
             return list(dict.fromkeys(f.raw_dir for f in self.projections))
         return [""]
 
+    def check_missing_projections(self):
+        """Check any missing projections which should be included.
+
+        Returns
+        -------
+        missing_scan, missing_proj, missing_angle : list
+            the list of missing scan, projection number and rotation
+            angle.
+
+        """
+        missing_scan = []
+        missing_proj = []
+        missing_angle = []
+
+        if self.include_scan:
+            missing_scan = sorted(
+                set(self.include_scan) - {p.id_scan for p in self.projections}
+            )
+        if self.include_proj:
+            missing_proj = sorted(
+                set(self.include_proj) - {p.id_proj for p in self.projections}
+            )
+        if self.include_angle:
+            missing_angle = sorted(
+                set(self.include_angle)
+                - {p.id_angle for p in self.projections}
+            )
+
+        if (logger := self.logger) is not None:
+            if missing_scan:
+                is_are = "s are" if (len(missing_scan) > 1) else " is"
+                ms = quote_iterable(missing_scan)
+                logger.warning(f"The following scan{is_are} missing: {ms}.")
+            if missing_proj:
+                is_are = "s are" if (len(missing_proj) > 1) else " is"
+                mp = quote_iterable(missing_proj)
+                logger.warning(
+                    f"The following projection number{is_are} "
+                    f"missing: {mp}."
+                )
+            if missing_angle:
+                is_are = "s are" if (len(missing_angle) > 1) else "s is"
+                ma = quote_iterable(missing_angle)
+                logger.warning(
+                    f"The following rotation angle{is_are} " f"missing: {ma}."
+                )
+
+        return missing_scan, missing_proj, missing_angle
+
     @contextmanager
     def log_find_all_projection(self, level=None, name=None, *, dry_run=False):
         """Log the method find_all_projections."""
