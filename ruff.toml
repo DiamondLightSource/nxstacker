@@ -22,11 +22,12 @@ lint.select = ["ALL"]
 # SIM108, I don't agree ternary operator is more readable
 # SLF001, access to private function often is needed although not good
 # S603, hard to validate input
-# G002, G003, don't care about minor performance gain
+# G002, G003, G004 don't care about minor performance gain
 # COM812, ISC001, suggested by formatter
 lint.ignore = ["ANN", "PERF", "C90", "D203", "D213", "D100", "D105",
     "T20", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "N803", "N806",
-    "RET504", "SIM108", "SLF001", "S603", "G002", "G003", "COM812", "ISC001"]
+    "RET504", "SIM108", "SLF001", "S603", "G002", "G003", "G004", "COM812",
+    "ISC001"]
 
 [lint.per-file-ignores]
 # no documentation for test functions and allow assert
