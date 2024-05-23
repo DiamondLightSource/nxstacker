@@ -176,8 +176,6 @@ class PtychoTomo(TomoExpt):
             msg = f"No valid projection has been found in {self.proj_dir}"
             raise RuntimeError(msg)
 
-        _ = self.check_missing_projections()
-
     def _preliminary_sort(self, files):
         software = {file.software for file in files}
         self._check_software_num(software)
@@ -230,6 +228,8 @@ class PtychoTomo(TomoExpt):
         # with rotation angles the projection files can be updated and
         # sorted if desired
         self._arrange_by_angle()
+
+        _ = self.check_missing_projections()
 
     def _arrange_by_angle(self):
         # update id_angle for the projections
