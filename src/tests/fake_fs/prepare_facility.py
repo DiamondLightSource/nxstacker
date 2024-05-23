@@ -115,7 +115,7 @@ class PrepareI14:
                 ] = "mm"
 
                 # sample name
-                f["/entry/sample"] = ""
+                f["/entry/sample"] = self.sample_name
 
                 # rotation angle
                 f["/entry/instrument/sample/sample_rot"] = self.rotation_angle
