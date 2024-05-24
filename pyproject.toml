@@ -9,6 +9,7 @@ dependencies = [
   "h5py",
   "hdf5plugin",
   "numpy",
+  "pyyaml",
   "scikit-image",
   "xraylib",
 ]
