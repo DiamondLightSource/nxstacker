@@ -173,6 +173,16 @@ class I13_1(FacilityInfo):  # noqa: N801
             )
             raise ValueError(msg)
 
+        num_projs = self._tot_num_proj(proj_file)
+        if int(proj_file.id_proj) >= num_projs:
+            pj = "projections" if num_projs > 1 else "projection"
+            msg = (
+                f"The projection number {proj_file.id_proj} is out of "
+                f"range for a scan with {num_projs} {pj}. The projection "
+                "number starts from 0."
+            )
+            raise IndexError(msg)
+
         with h5py.File(rot_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.rotation_angle_path)
             rot_ang = dset[int(proj_file.id_proj), :, 0].mean()
@@ -235,6 +245,14 @@ class I13_1(FacilityInfo):  # noqa: N801
 
         """
         num_projs = self._tot_num_proj(proj_file)
+        if int(proj_file.id_proj) >= num_projs:
+            pj = "projections" if num_projs > 1 else "projection"
+            msg = (
+                f"The projection number {proj_file.id_proj} is out of "
+                f"range for a scan with {num_projs} {pj}. The projection "
+                "number starts from 0."
+            )
+            raise IndexError(msg)
 
         with h5py.File(start_time_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.start_time_path)
@@ -280,6 +298,14 @@ class I13_1(FacilityInfo):  # noqa: N801
 
         """
         num_projs = self._tot_num_proj(proj_file)
+        if int(proj_file.id_proj) >= num_projs:
+            pj = "projections" if num_projs > 1 else "projection"
+            msg = (
+                f"The projection number {proj_file.id_proj} is out of "
+                f"range for a scan with {num_projs} {pj}. The projection "
+                "number starts from 0."
+            )
+            raise IndexError(msg)
 
         with h5py.File(end_time_f, "r") as f:
             dset = dataset_from_first_valid_path(f, self.end_time_path)
