@@ -19,9 +19,7 @@ python -m pip install .
 The key function you would be interacting with is *tomojoin*. A command-line
 interface (CLI) is also provided.
 
-### General
-
-#### Get help
+### Get help
 
 For ptycho-tomography,
 
@@ -35,13 +33,13 @@ For xrf-tomography,
 tomojoin xrf --help
 ```
 
-#### Get version
+### Get version
 
 ```console
 tomojoin --version
 ```
 
-#### Get NXtomo file from ptycho-tomography experiment
+### Get NXtomo file from ptycho-tomography experiment
 
 ```python
 from nxstacker.tomojoin import tomojoin
@@ -120,7 +118,7 @@ for projection numbers and `exclude_angle` for rotation angles.
 
 See [API](#api) for more information about the parameters.
 
-#### Get a NXtomo file from XRF-tomography experiment
+### Get a NXtomo file from XRF-tomography experiment
 
 ```python
 from nxstacker.tomojoin import tomojoin
