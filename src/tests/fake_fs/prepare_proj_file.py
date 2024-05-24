@@ -4,6 +4,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+from nxstacker.utils.model import XRFTransitionList
 
 
 class PreparePtyPyFile:
@@ -164,5 +165,61 @@ class PreparePtyREXFile:
                 f["/entry_1/experiment_1/detector/distance"] = (
                     self.detector_distance
                 )
+
+            self.proj_files.append(fp)
+
+
+class PrepareXRFWindowFile:
+    """Prepare minimal XRF window file from Python for testing."""
+
+    line_groups = XRFTransitionList()
+
+    def __init__(
+        self,
+        dest,
+        scan_num,
+        ob_shape,
+        line_groups,
+    ):
+        """Initialise the instance for preparation.
+
+        Parameters
+        ----------
+        dest : str or pathlib.Path
+            the directory to save the files
+        scan_num : list
+            the scan number(s) from which they are reconstructed
+        ob_shape : iterable
+            the 2D shape of the elemental map
+        line_groups : list
+            the line groups that have been windowed
+
+        """
+        self.ob_sh = ob_shape
+        self.scan_num = scan_num
+        self.line_groups = line_groups
+
+        # create directory to store the files
+        self.proj_dir = Path(dest) / "proj_dir"
+        self.proj_dir.mkdir(parents=True)
+
+        self.proj_files = []
+
+    def write_dummy_proj(self):
+        """Save a minimal dummy XRF window file (i14)."""
+        rng = np.random.default_rng()
+
+        for sn in self.scan_num:
+            fp = self.proj_dir / f"i14-{sn}_xrf.nxs"
+
+            with h5py.File(fp, "w") as f:
+                mca = rng.random((*self.ob_sh, 4096))
+                f["/processed/mca/data"] = mca
+
+                result = rng.random(self.ob_sh)
+                f["/processed/result/data"] = result
+
+                for lg in self.line_groups:
+                    f[f"/processed/{lg}/data"] = rng.random(self.ob_sh)
 
             self.proj_files.append(fp)
