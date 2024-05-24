@@ -1,5 +1,6 @@
 import re
 from collections import deque
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
@@ -139,3 +140,8 @@ class ProjIdentifier:
             # only first column
             ids = [self.id_type(entry.split(delimiter)[0]) for entry in f]
         return ids
+
+    @cached_property
+    def num_identifiers(self):
+        """Store the number of identifiers."""
+        return len(self.identifiers)
