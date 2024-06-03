@@ -32,7 +32,7 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "coming soon"
+Repository = "https://github.com/DiamondLightSource/nxstacker"
 
 [project.scripts]
 "tomojoin" = "nxstacker.tomojoin:tomojoin_entry"
