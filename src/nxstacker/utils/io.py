@@ -154,3 +154,26 @@ def get_version():
     except PackageNotFoundError:
         ver = "dev"
     return ver
+
+
+def is_staging_area(directory):
+    """Check if the given directory is a DLS staging area.
+
+    Parameters
+    ----------
+    directory : str or pathlib.Path
+        the directory to be checked
+
+    Returns
+    -------
+    True or False, indicating whether this is a DLS staging area
+
+    """
+    dir_ = Path(directory).resolve()
+
+    try:
+        dir_.relative_to("/dls/staging")
+    except ValueError:
+        return False
+    else:
+        return True
