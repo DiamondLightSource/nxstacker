@@ -145,8 +145,9 @@ def as_dls_staging_area(visit):
     -------
     the corresponding staging area for a visit, e.g. if the visit is
     "/dls/xxx/data/2024" then it will return
-    "/dls/staging/xxx/data/2024". It will return the original path if
-    the visit is not a DLS visit (not starting as "/dls").
+    "/dls/staging/dls/xxx/data/2024". It will return the original path
+    if the visit is not a DLS visit (not starting as "/dls") or already
+    a staging area for a visit.
 
     """
     visit = Path(visit).resolve()
