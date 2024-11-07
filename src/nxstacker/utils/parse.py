@@ -157,5 +157,12 @@ def as_dls_staging_area(visit):
     except ValueError:
         return visit
     else:
-        staging = Path.joinpath(Path("/dls/staging"), without_dls)
-        return staging
+        try:
+            visit.relative_to("/dls/staging")
+        except ValueError:
+            # not a staging, return its staging version
+            staging = Path.joinpath(Path("/dls/staging/dls"), without_dls)
+            return staging
+        else:
+            # it is a staging, just return it
+            return visit
