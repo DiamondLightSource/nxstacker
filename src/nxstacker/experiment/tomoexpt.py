@@ -370,7 +370,8 @@ class TomoExpt:
             f"'{self.metadata.sample_description}'."
         )
         logger.info(
-            "The detector distance is {self.metadata.detector_distance:.3e} m."
+            "The detector distance is "
+            f"{self.metadata.detector_distance:.3e} m."
         )
         logger.info(f"The x pixel size is {self.metadata.x_pixel_size:.3e} m.")
         logger.info(f"The y pixel size is {self.metadata.y_pixel_size:.3e} m.")
