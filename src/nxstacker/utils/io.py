@@ -33,8 +33,8 @@ def file_has_paths(file_path, paths):
 def top_level_dir(directory, depth=6):
     """Return partial path of a directory with a specific depth.
 
-    E.g. "/first/second/third/fourth" with a depth of 2 will return
-    "/first/second".
+    E.g. "/first/second/third/fourth" with a depth of 3 will return
+    "/first/second" ('/' counts as one depth).
 
     Parameters
     ----------
