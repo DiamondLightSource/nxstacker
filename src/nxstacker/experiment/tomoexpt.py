@@ -38,6 +38,7 @@ class TomoExpt:
     proj_file = FilePath(undefined_ok=True)
     nxtomo_dir = Directory()
     raw_dir = Directory(undefined_ok=True, must_exist=True)
+    skip_proj_file_check = FixedValue()
     facility = ExperimentFacility()
     include_scan = IdentifierRange(int)
     include_proj = IdentifierRange(int)
@@ -65,12 +66,14 @@ class TomoExpt:
         sort_by_angle,
         pad_to_max,
         compress,
+        skip_proj_file_check,
     ):
         """Initialise a tomography experiment."""
         self.proj_dir = proj_dir
         self.proj_file = proj_file
         self.nxtomo_dir = nxtomo_dir
         self.raw_dir = raw_dir
+        self.skip_proj_file_check = skip_proj_file_check
 
         self.facility = facility
 
