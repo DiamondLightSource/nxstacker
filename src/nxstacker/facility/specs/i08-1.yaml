@@ -1,3 +1,5 @@
+ptycho_file_type:
+  - PtyPy
 sample_name_path:
   - /entry/sample/name
 rotation_angle_path:

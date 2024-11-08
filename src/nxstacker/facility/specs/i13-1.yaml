@@ -1,3 +1,5 @@
+ptycho_file_type:
+  - PtyREX
 start_time_path:
   - /entry/instrument/NDAttributes/NDArrayTimeStamp #@position_0.h5
 end_time_path:
