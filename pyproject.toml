@@ -43,6 +43,10 @@ Repository = "https://github.com/DiamondLightSource/nxstacker"
 [project.optional-dependencies]
 test = ["pytest"]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*"]
+
 [tool.setuptools.package-data]
 "nxstacker.facility.specs" = ["*.yaml"]
 
