@@ -40,6 +40,9 @@ Repository = "https://github.com/DiamondLightSource/nxstacker"
 [project.scripts]
 "tomojoin" = "nxstacker.tomojoin:tomojoin_entry"
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [tool.setuptools.package-data]
 "nxstacker.facility.specs" = ["*.yaml"]
 
