@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 
 from nxstacker.io.projection import ProjectionFile
-from nxstacker.utils.io import top_level_dir
+from nxstacker.utils.io import is_staging_area, top_level_dir
 from nxstacker.utils.model import (
     FilePath,
     FixedValue,
@@ -152,12 +152,22 @@ class PtyPyFile(ProjectionFile):
 
     def _overwrite_raw_dir(self):
         """Overwrite the _raw_dir attribute."""
-        raw_dir = top_level_dir(self._raw_file)
+        if is_staging_area(self._raw_file):
+            depth = 8
+        else:
+            depth = 6
+
+        raw_dir = top_level_dir(self._raw_file, depth=depth)
 
         if Path(raw_dir).is_dir():
             self._raw_dir = raw_dir
         else:
-            self._raw_dir = top_level_dir(self._file_path)
+            # this is a fallback
+            if is_staging_area(self._file_path):
+                depth = 8
+            else:
+                depth = 6
+            self._raw_dir = top_level_dir(self._file_path, depth=depth)
 
     def object_complex(self, mode=0):
         """Return the complex object of a particular mode.

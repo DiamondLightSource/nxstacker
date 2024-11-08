@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 
 from nxstacker.io.projection import ProjectionFile
-from nxstacker.utils.io import top_level_dir
+from nxstacker.utils.io import is_staging_area, top_level_dir
 from nxstacker.utils.model import (
     FixedValue,
 )
@@ -134,12 +134,22 @@ class PtyREXFile(ProjectionFile):
         if isinstance(save_dir, bytes):
             save_dir = save_dir.decode()
 
-        raw_dir = top_level_dir(save_dir)
+        if is_staging_area(save_dir):
+            depth = 8
+        else:
+            depth = 6
+
+        raw_dir = top_level_dir(save_dir, depth=depth)
 
         if Path(raw_dir).is_dir():
             self._raw_dir = raw_dir
         else:
-            self._raw_dir = top_level_dir(self._file_path)
+            # this is a fallback
+            if is_staging_area(self._file_path):
+                depth = 8
+            else:
+                depth = 6
+            self._raw_dir = top_level_dir(self._file_path, depth=depth)
 
     def _pad_extent(self, img, pad_value=0):
         """Return the extent of padding for PtyREX file."""

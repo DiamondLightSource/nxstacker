@@ -4,7 +4,7 @@ from types import MappingProxyType
 import h5py
 
 from nxstacker.io.projection import ProjectionFile
-from nxstacker.utils.io import top_level_dir
+from nxstacker.utils.io import is_staging_area, top_level_dir
 
 
 class XRFWindowFile(ProjectionFile):
@@ -102,7 +102,12 @@ class XRFWindowFile(ProjectionFile):
 
     def _overwrite_raw_dir(self):
         """Overwrite the _raw_dir attribute."""
-        self._raw_dir = top_level_dir(self._file_path)
+        if is_staging_area(self._file_path):
+            depth = 8
+        else:
+            depth = 6
+
+        self._raw_dir = top_level_dir(self._file_path, depth=depth)
 
     def elemental_map(self, transition):
         """Return the correpsonding elemental map.
