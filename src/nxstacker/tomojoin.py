@@ -33,6 +33,7 @@ def tomojoin(
     compress=False,
     quiet=False,
     dry_run=False,
+    skip_proj_file_check=True,
     **kwargs,
 ):
     """Combine projections to produce an NXtomo file.
@@ -100,6 +101,11 @@ def tomojoin(
         whether to suppress log message. Default to False.
     dry_run : bool, optional
         whether to perform a dry-run. Default to False.
+    skip_proj_file_check : bool, optional
+        whether to skip the file check when adding an hdf5 to the list
+        of projection files. Usually this is true when you are doing a
+        typical stacking and sure no other hdf5 files are present in
+        proj_dir. Default to True.
     kwargs : dict, optional
         options for ptycho-tomography
 
@@ -139,6 +145,7 @@ def tomojoin(
         sort_by_angle=sort_by_angle,
         pad_to_max=pad_to_max,
         compress=compress,
+        skip_proj_file_check=skip_proj_file_check,
         **kwargs,
     )
 

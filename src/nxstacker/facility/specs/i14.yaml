@@ -1,3 +1,7 @@
+ptycho_file_type:
+  - PtyPy
+xrf_file_type:
+  - python processing
 detector_distance_path:
   - /entry/instrument/detectors/excalibur_z
   - /entry/instrument/scannables/excalibur_z/value

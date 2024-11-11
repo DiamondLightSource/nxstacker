@@ -17,6 +17,7 @@ def select_tomo_expt(
     sort_by_angle=False,
     pad_to_max=True,
     compress=False,
+    skip_proj_file_check=True,
     **kwargs,
 ):
     """Select the experiment for the projections.
@@ -63,6 +64,11 @@ def select_tomo_expt(
     compress : bool, optional
         whether to apply compression on the NXtomo file. Default to
         False.
+    skip_proj_file_check : bool, optional
+        whether to skip the file check when adding an hdf5 to the list
+        of projection files. Usually this is true when you are doing a
+        typical stacking and sure no other hdf5 files are present in
+        proj_dir. Default to True.
     kwargs : dict, optional
         optional arguments to different types of experiments
 
@@ -91,6 +97,7 @@ def select_tomo_expt(
                 sort_by_angle=sort_by_angle,
                 pad_to_max=pad_to_max,
                 compress=compress,
+                skip_proj_file_check=skip_proj_file_check,
                 **kwargs,
             )
         case "xrf":
@@ -106,6 +113,7 @@ def select_tomo_expt(
                 sort_by_angle=sort_by_angle,
                 pad_to_max=pad_to_max,
                 compress=compress,
+                skip_proj_file_check=skip_proj_file_check,
                 **kwargs,
             )
         case "dpc":
