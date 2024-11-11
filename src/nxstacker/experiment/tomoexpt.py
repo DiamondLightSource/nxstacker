@@ -316,6 +316,21 @@ class TomoExpt:
         logger.info(
             f"The directory to look for projections is '{self.proj_dir}'."
         )
+        if self.skip_proj_file_check:
+            logger.info(
+                "Skipping the validation of projection files in the above "
+                "directory."
+            )
+            if self.short_name == "ptycho":
+                assume_file_type = self.facility.ptycho_file_type[0]
+            elif self.short_name == "xrf":
+                assume_file_type = self.facility.xrf_file_type[0]
+            else:
+                assume_file_type = "'unknown'"
+            logger.info(
+                f"Assume the projection files are from {assume_file_type}."
+            )
+
         st = time.perf_counter()
         return st
 
