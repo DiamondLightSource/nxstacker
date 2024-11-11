@@ -1,5 +1,7 @@
+import os
 from collections import deque
 from contextlib import nullcontext
+from multiprocessing import Pool
 from types import MappingProxyType
 
 import h5py
@@ -133,12 +135,19 @@ class PtychoTomo(TomoExpt):
         self._unwrap_phase = kwargs.get("unwrap_phase", False)
         self._rescale = kwargs.get("rescale", False)
 
-    def find_all_projections(self):
+    def find_all_projections(self, *, parallel=False):
         """Find all projections.
 
         It goes through files and directories in self.proj_dir, add the
         file to self.projections if they should be included as informed
         by self.include_scan and self.include_proj.
+
+        Parameters
+        ----------
+        parallel : bool, optional
+            parallelise the finding of projection files. Default to
+            True.
+
         """
         pty_files = deque()
 
@@ -148,31 +157,66 @@ class PtychoTomo(TomoExpt):
             extensions = self._supported_extensions()
             file_iter = self.proj_dir.glob(f"**/*[{','.join(extensions)}]")
 
-        if self.skip_proj_file_check:
-            assume_ptypy_file = "PtyPy" in self.facility.ptycho_file_type
-            assume_ptyrex_file = "PtyREX" in self.facility.ptycho_file_type
+        # set the flags of whether assuming they are of a specified
+        # projection file type and the order to validate file if no such
+        # assumption is make
+        self._assume_file_order()
+
+        if parallel:
+            # from py3.13 there is a os.process_cpu_count function
+            # can switch over once <=py3.12 support is dropped
+            ncpus = len(os.sched_getaffinity(0))
+            with Pool(processes=ncpus) as pool:
+                for pty_file in pool.imap_unordered(
+                    self._find_proj, file_iter
+                ):
+                    if pty_file is not None:
+                        pty_files.append(pty_file)
         else:
-            assume_ptypy_file = False
-            assume_ptyrex_file = False
+            # serial
+            for fp in file_iter:
+                pty_file = self._find_proj(fp)
+                if pty_file is not None:
+                    pty_files.append(pty_file)
+
+        self._projections = self._preliminary_sort(pty_files)
+
+        if self.num_projections == 0:
+            msg = f"No valid projection has been found in {self.proj_dir}"
+            raise RuntimeError(msg)
+
+    def _assume_file_order(self):
+        if self.skip_proj_file_check:
+            self._assume_ptypy_file = "PtyPy" in self.facility.ptycho_file_type
+            self._assume_ptyrex_file = (
+                "PtyREX" in self.facility.ptycho_file_type
+            )
+
+            # these are not used
+            self._order_paths = ()
+            self._order_init = ()
+        else:
+            self._assume_ptypy_file = False
+            self._assume_ptyrex_file = False
 
             # now it won't skip checking, so give preference to the
             # assumed file type as the ordering of checking impacts the
             # speed
             if "PtyPy" in self.facility.ptycho_file_type:
-                order_paths = (
+                self._order_paths = (
                     PtyPyFile.essential_paths,
                     PtyREXFile.essential_paths,
                 )
-                order_init = (
+                self._order_init = (
                     self._init_ptypy_file,
                     self._init_ptyrex_file,
                 )
             elif "PtyREX" in self.facility.ptycho_file_type:
-                order_paths = (
+                self._order_paths = (
                     PtyREXFile.essential_paths,
                     PtyPyFile.essential_paths,
                 )
-                order_init = (
+                self._order_init = (
                     self._init_ptyrex_file,
                     self._init_ptypy_file,
                 )
@@ -183,35 +227,34 @@ class PtychoTomo(TomoExpt):
                 )
                 raise ValueError(msg)
 
-        for fp in file_iter:
-            if h5py.is_hdf5(fp):
-                if any([assume_ptypy_file, assume_ptyrex_file]):
-                    # no check, quicker but less safe
-                    if assume_ptypy_file:
-                        pty_file, to_include = self._init_ptypy_file(fp)
-                    elif assume_ptyrex_file:
-                        pty_file, to_include = self._init_ptyrex_file(fp)
-                else:
-                    # look at the keys of the file to determine its type
-                    # from a preferred order as determined by the
-                    # facility, slower but safer
-                    for ep, init_method in zip(
-                        order_paths, order_init, strict=False
-                    ):
-                        if file_has_paths(fp, ep):
-                            pty_file, to_include = init_method(fp)
-                            break
+    def _find_proj(self, fp):
+        pty_file = None
+        if h5py.is_hdf5(fp):
+            if any([self._assume_ptypy_file, self._assume_ptyrex_file]):
+                # no check, quicker but less safe
+                if self._assume_ptypy_file:
+                    pty_file, to_include = self._init_ptypy_file(fp)
+                elif self._assume_ptyrex_file:
+                    pty_file, to_include = self._init_ptyrex_file(fp)
+            else:
+                # look at the keys of the file to determine its type
+                # from a preferred order as determined by the
+                # facility, slower but safer
+                for ep, init_method in zip(
+                    self._order_paths, self._order_init, strict=False
+                ):
+                    if file_has_paths(fp, ep):
+                        pty_file, to_include = init_method(fp)
+                        break
 
-                # add the file if it should be included
-                if to_include:
-                    pty_file.fill_attr()
-                    pty_files.append(pty_file)
+            # fill the attribute of the file if it should be included
+            # and return the file, otherwise return None
+            if to_include:
+                pty_file.fill_attr()
+                return pty_file
+            return None
 
-        self._projections = self._preliminary_sort(pty_files)
-
-        if self.num_projections == 0:
-            msg = f"No valid projection has been found in {self.proj_dir}"
-            raise RuntimeError(msg)
+        return pty_file
 
     def _init_ptypy_file(self, fp):
         # for PtyPy file, projection number doesn't matter
