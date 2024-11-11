@@ -148,40 +148,88 @@ class PtychoTomo(TomoExpt):
             extensions = self._supported_extensions()
             file_iter = self.proj_dir.glob(f"**/*[{','.join(extensions)}]")
 
+        if self.skip_proj_file_check:
+            assume_ptypy_file = "PtyPy" in self.facility.ptycho_file_type
+            assume_ptyrex_file = "PtyREX" in self.facility.ptycho_file_type
+        else:
+            assume_ptypy_file = False
+            assume_ptyrex_file = False
+
+            # now it won't skip checking, so give preference to the
+            # assumed file type as the ordering of checking impacts the
+            # speed
+            if "PtyPy" in self.facility.ptycho_file_type:
+                order_paths = (
+                    PtyPyFile.essential_paths,
+                    PtyREXFile.essential_paths,
+                )
+                order_init = (
+                    self._init_ptypy_file,
+                    self._init_ptyrex_file,
+                )
+            elif "PtyREX" in self.facility.ptycho_file_type:
+                order_paths = (
+                    PtyREXFile.essential_paths,
+                    PtyPyFile.essential_paths,
+                )
+                order_init = (
+                    self._init_ptyrex_file,
+                    self._init_ptypy_file,
+                )
+            else:
+                msg = (
+                    "Unsupported ptychography file type "
+                    f"'{self.facility.ptycho_file_type}'."
+                )
+                raise ValueError(msg)
+
         for fp in file_iter:
-            # look at the keys of the file to determine its type
             if h5py.is_hdf5(fp):
-                if file_has_paths(fp, PtyPyFile.essential_paths):
-                    # for PtyPy file, projection number doesn't matter
-                    pty_file = PtyPyFile(
-                        fp, id_proj=0, verify=False, raw_dir=self.raw_dir
-                    )
+                if any([assume_ptypy_file, assume_ptyrex_file]):
+                    # no check, quicker but less safe
+                    if assume_ptypy_file:
+                        pty_file, to_include = self._init_ptypy_file(fp)
+                    elif assume_ptyrex_file:
+                        pty_file, to_include = self._init_ptyrex_file(fp)
+                else:
+                    # look at the keys of the file to determine its type
+                    # from a preferred order as determined by the
+                    # facility, slower but safer
+                    for ep, init_method in zip(
+                        order_paths, order_init, strict=False
+                    ):
+                        if file_has_paths(fp, ep):
+                            pty_file, to_include = init_method(fp)
+                            break
 
-                    to_include = pty_file.id_scan in self.include_scan
-
-                    if to_include:
-                        pty_file.fill_attr()
-                        pty_files.append(pty_file)
-
-                elif file_has_paths(fp, PtyREXFile.essential_paths):
-                    pty_file = PtyREXFile(
-                        fp, verify=False, raw_dir=self.raw_dir
-                    )
-
-                    to_include = (
-                        pty_file.id_scan in self.include_scan
-                        and pty_file.id_proj in self.include_proj
-                    )
-
-                    if to_include:
-                        pty_file.fill_attr()
-                        pty_files.append(pty_file)
+                # add the file if it should be included
+                if to_include:
+                    pty_file.fill_attr()
+                    pty_files.append(pty_file)
 
         self._projections = self._preliminary_sort(pty_files)
 
         if self.num_projections == 0:
             msg = f"No valid projection has been found in {self.proj_dir}"
             raise RuntimeError(msg)
+
+    def _init_ptypy_file(self, fp):
+        # for PtyPy file, projection number doesn't matter
+        pty_file = PtyPyFile(fp, id_proj=0, verify=False, raw_dir=self.raw_dir)
+
+        to_include = pty_file.id_scan in self.include_scan
+
+        return pty_file, to_include
+
+    def _init_ptyrex_file(self, fp):
+        pty_file = PtyREXFile(fp, verify=False, raw_dir=self.raw_dir)
+
+        to_include = (
+            pty_file.id_scan in self.include_scan
+            and pty_file.id_proj in self.include_proj
+        )
+
+        return pty_file, to_include
 
     def _preliminary_sort(self, files):
         software = {file.software for file in files}
