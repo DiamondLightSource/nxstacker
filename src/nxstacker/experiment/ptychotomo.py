@@ -135,7 +135,7 @@ class PtychoTomo(TomoExpt):
         self._unwrap_phase = kwargs.get("unwrap_phase", False)
         self._rescale = kwargs.get("rescale", False)
 
-    def find_all_projections(self, *, parallel=False):
+    def find_all_projections(self, *, parallel=True):
         """Find all projections.
 
         It goes through files and directories in self.proj_dir, add the
