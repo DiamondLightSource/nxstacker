@@ -2,10 +2,12 @@ from datetime import datetime, timedelta, tzinfo
 from pathlib import Path
 from types import MappingProxyType
 
+import blosc
 import xraylib
 
 from nxstacker.parser.proj_identifier import generate_numbers
 from nxstacker.utils.facility import choose_facility_info
+from nxstacker.utils.resource import num_cpus
 
 
 class UKtz(tzinfo):
@@ -358,3 +360,54 @@ class XRFTransitionList(FixedValue):
         elif invalid_transition:
             msg = f"The transition '{transition}' is invalid."
         raise ValueError(msg)
+
+
+class CompressionBlosc:
+    """Hold attributes for Blosc compression."""
+
+    compression_id = 32001
+    clevel = FixedValue()
+    compressor = FixedValue()
+    compressor_code = FixedValue()
+    comopts = FixedValue()
+
+    def __init__(self, clevel=9, compressor="blosclz"):
+        """Initialise instance holding attributes for Blosc compression.
+
+        Parameters
+        ----------
+        clevel : int, optional
+            the compression level, from 0-9. Default to 9.
+        compressor : str, optional
+            the compressor to use, optional are "blosclz", "lz4",
+            "lz4hc", "snappy", "zlib" and "zstd". Default is "blosclz".
+
+        """
+        self.clevel = clevel
+        self.compressor = compressor
+        self.compressor_code = blosc.name_to_code(self.compressor)
+
+        self.comopts = (
+            0,
+            0,
+            0,
+            0,
+            self.clevel,
+            blosc.BITSHUFFLE,
+            self.compressor_code,
+        )
+
+        # during initialisation, use the maximum permitted number of
+        # threads
+        self.set_nthreads(num_cpus())
+
+    def set_nthreads(self, nthreads):
+        """Set the number of threads during Blosc compression.
+
+        Parameters
+        ----------
+        nthreads : int
+            the number of threads to be used in Blosc compression
+
+        """
+        blosc.set_nthreads(nthreads)

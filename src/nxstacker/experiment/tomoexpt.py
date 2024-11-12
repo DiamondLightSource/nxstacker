@@ -18,6 +18,7 @@ import numpy as np
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import (
+    CompressionBlosc,
     Directory,
     ExperimentFacility,
     FilePath,
@@ -49,6 +50,7 @@ class TomoExpt:
     sort_by_angle = FixedValue()
     pad_to_max = FixedValue()
     compress = FixedValue()
+    compression_settings = FixedValue()
     metadata = FixedValue()
     nxtomo_output_files = FixedValue()
     logger = FixedValue()
@@ -113,12 +115,18 @@ class TomoExpt:
         with suppress(KeyError):
             md_dict.pop("rotation_angle")
 
+        # define the instance holding the compression attributes
+        if self.compress:
+            self.compression_settings = CompressionBlosc()
+        else:
+            self.compression_settings = None
+
         create_minimal(
             filename,
             stack_shape,
             stack_dtype,
             self.facility,
-            compress=self.compress,
+            compression_settings=self.compression_settings,
             **md_dict,
         )
         return filename
