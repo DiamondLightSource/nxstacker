@@ -13,6 +13,7 @@ from itertools import chain
 from pathlib import Path
 from types import MappingProxyType
 
+import blosc
 import numpy as np
 
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
@@ -213,8 +214,33 @@ class TomoExpt:
         self._proj_dir = Path(proj_dir).resolve()
 
     def _save_proj_to_dset(self, fh, proj_index, proj, angle):
+        use_direct_chunk = True
         proj_dset = fh[self.proj_dset_path]
-        proj_dset[proj_index, :, :] = proj
+        if use_direct_chunk:
+            # ensure it is contiguous
+            proj = np.ascontiguousarray(proj)
+
+            if self.compression_settings is None:
+                # no compression
+                saved = proj.tobytes()
+            else:
+                # blosc compression
+                ptr_proj = proj.__array_interface__["data"][0]
+                comopts = self.compression_settings.comopts
+                cname = self.compression_settings.compressor
+                saved = blosc.compress_ptr(
+                    ptr_proj,
+                    items=proj.size,
+                    typesize=proj.itemsize,
+                    clevel=comopts[4],
+                    shuffle=comopts[5],
+                    cname=cname,
+                )
+
+            proj_dset.id.write_direct_chunk((proj_index, 0, 0), saved)
+        else:
+            proj_dset = fh[self.proj_dset_path]
+            proj_dset[proj_index, :, :] = proj
 
         rot_ang_dset = fh[self.rot_ang_dset_path]
         rot_ang_dset[proj_index] = angle
