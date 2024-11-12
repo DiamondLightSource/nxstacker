@@ -1,4 +1,3 @@
-import os
 from collections import deque
 from contextlib import nullcontext
 from multiprocessing import Pool
@@ -20,6 +19,7 @@ from nxstacker.utils.ptychography import (
     remove_phase_ramp,
     unwrap_phase,
 )
+from nxstacker.utils.resource import num_cpus
 
 
 class PtychoTomo(TomoExpt):
@@ -163,9 +163,7 @@ class PtychoTomo(TomoExpt):
         self._assume_file_order()
 
         if parallel:
-            # from py3.13 there is a os.process_cpu_count function
-            # can switch over once <=py3.12 support is dropped
-            ncpus = len(os.sched_getaffinity(0))
+            ncpus = num_cpus()
             with Pool(processes=ncpus) as pool:
                 for pty_file in pool.imap_unordered(
                     self._find_proj, file_iter
