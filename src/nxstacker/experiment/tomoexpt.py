@@ -245,31 +245,6 @@ class TomoExpt:
         rot_ang_dset = fh[self.rot_ang_dset_path]
         rot_ang_dset[proj_index] = angle
 
-    def _resize_proj(self, proj, stack_shape):
-        proj_y, proj_x = proj.shape
-        stack_y, stack_x = stack_shape[1:]
-
-        if self.pad_to_max and (proj_y < stack_y or proj_x < stack_x):
-            # pad to stack shape if the projection is smaller than
-            # others
-            y_diff = stack_y - proj_y
-            top = y_diff // 2
-            bottom = top + y_diff % 2
-
-            x_diff = stack_x - proj_x
-            left = x_diff // 2
-            right = left + x_diff % 2
-
-            final = np.pad(
-                proj,
-                ((top, bottom), (left, right)),
-                mode="symmetric",
-            )
-        else:
-            final = proj
-
-        return final
-
     def _gather_raw_dir_from_proj_file(self):
         if self.num_projections != 0:
             return list(dict.fromkeys(f.raw_dir for f in self.projections))

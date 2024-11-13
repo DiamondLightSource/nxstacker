@@ -4,6 +4,7 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import h5py
+import numpy as np
 
 
 def file_has_paths(file_path, paths):
@@ -177,3 +178,63 @@ def is_staging_area(directory):
         return False
     else:
         return True
+
+
+def pad2stack(proj, stack_shape):
+    """Pad a projection to match the stack shape.
+
+    It assumes the projection of shape (y, x) is equal or smaller than
+    the stack (n, sy, sx), i.e. y <= sy and x <= sx, otherwise it raises
+    ValueError.
+
+    Parameters
+    ----------
+    proj : array-like, 2D
+        the projection image to be resized.
+    stack_shape : tuple, 3D
+        the shape of the stack where the projection is being stacked to.
+
+    Returns
+    -------
+        the padded image, return the same image if they are of equal
+        size.
+
+    """
+    proj = np.asarray(proj)
+    proj_y, proj_x = proj.shape
+    stack_y, stack_x = stack_shape[1:]
+
+    if proj_y > stack_y:
+        msg = (
+            f"The y dimension of projection ({proj_y}) is larger than the "
+            f"y dimension of the stack ({stack_y})."
+        )
+        raise ValueError(msg)
+
+    if proj_x > stack_x:
+        msg = (
+            f"The x dimension of projection ({proj_x}) is larger than the "
+            f"x dimension of the stack ({stack_x})."
+        )
+        raise ValueError(msg)
+
+    if proj_y < stack_y or proj_x < stack_x:
+        # pad to stack shape if the projection is smaller than
+        # others
+        y_diff = stack_y - proj_y
+        top = y_diff // 2
+        bottom = top + y_diff % 2
+
+        x_diff = stack_x - proj_x
+        left = x_diff // 2
+        right = left + x_diff % 2
+
+        final = np.pad(
+            proj,
+            ((top, bottom), (left, right)),
+            mode="symmetric",
+        )
+    else:
+        final = proj
+
+    return final
