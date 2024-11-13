@@ -7,7 +7,11 @@ import numpy as np
 from nxstacker.experiment.tomoexpt import TomoExpt
 from nxstacker.io.nxtomo.metadata import MetadataXRF
 from nxstacker.io.xrf.python_processing import XRFWindowFile
-from nxstacker.utils.io import file_has_paths
+from nxstacker.utils.io import (
+    file_has_paths,
+    pad2stack,
+    save_proj_to_h5,
+)
 from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import XRFTransitionList
 from nxstacker.utils.parse import quote_iterable, unique_or_raise
@@ -167,8 +171,16 @@ class XRFTomo(TomoExpt):
                     rot_ang = pty_file.id_angle
                     el_map = pty_file.elemental_map(transition)
 
-                    el_map = self._resize_proj(el_map, st_sh)
-                    self._save_proj_to_dset(f, k, el_map, rot_ang)
+                    el_map = pad2stack(el_map, st_sh)
+                    el_data = {
+                        "data": el_map,
+                        "key": self.proj_dset_path,
+                    }
+                    angle_data = {
+                        "data": rot_ang,
+                        "key": self.rot_ang_dset_path,
+                    }
+                    save_proj_to_h5(f, k, el_data, angle_data)
 
         self._nxtomo_output_files = nxtomo_flist
 
