@@ -144,13 +144,24 @@ transition must be present in the projection files.
 
 See [API](#api) for more information about the parameters.
 
+## Tip to speed up
+
+### Skip projection file validation
+
+You can set the parameter `skip_proj_file_check` to `True` to skip the
+validation of projection files if you know *all* the HDF5 files in `proj_dir`
+are from a particular source. The default is `False` for safety reason. Setting
+this to `True` can potentially speed up the time in finding the projection
+files, especially if you have a lot of HDF5 files there. The same can be
+achieved via the CLI by using `--skip-check`.
+
 ## API
 
 ### nxstacker.tomojoin
 
 #### `tomojoin`
 
-There are 20 parameters for this function, excluding parameters specific to a
+There are 21 parameters for this function, excluding parameters specific to a
 particular type of experiment.
 
 ##### Common parameters
@@ -254,6 +265,12 @@ whether to suppress log message. Default to False.
 - *dry_run*
 
 whether to perform a dry-run. Default to False.
+
+- *skip_proj_file_check*
+
+whether to skip the file check when adding an hdf5 to the list of projection
+files. Usually this is true when you are doing a typical stacking and sure no
+other hdf5 files are present in `proj_dir`. Default to False.
 
 ##### Specific to ptychography
 
