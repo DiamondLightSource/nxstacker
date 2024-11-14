@@ -17,7 +17,7 @@ def select_tomo_expt(
     sort_by_angle=False,
     pad_to_max=True,
     compress=False,
-    skip_proj_file_check=True,
+    skip_proj_file_check=False,
     **kwargs,
 ):
     """Select the experiment for the projections.
@@ -68,7 +68,7 @@ def select_tomo_expt(
         whether to skip the file check when adding an hdf5 to the list
         of projection files. Usually this is true when you are doing a
         typical stacking and sure no other hdf5 files are present in
-        proj_dir. Default to True.
+        proj_dir. Default to False.
     kwargs : dict, optional
         optional arguments to different types of experiments
 

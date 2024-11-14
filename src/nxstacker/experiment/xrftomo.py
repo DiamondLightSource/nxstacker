@@ -43,7 +43,7 @@ class XRFTomo(TomoExpt):
         sort_by_angle=False,
         pad_to_max=True,
         compress=False,
-        skip_proj_file_check=True,
+        skip_proj_file_check=False,
         **kwargs,
     ):
         """Initialise the instance."""

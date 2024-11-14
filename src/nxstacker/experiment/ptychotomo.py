@@ -59,7 +59,7 @@ class PtychoTomo(TomoExpt):
         sort_by_angle=False,
         pad_to_max=True,
         compress=False,
-        skip_proj_file_check=True,
+        skip_proj_file_check=False,
         **kwargs,
     ):
         """Initialise the instance.
@@ -111,7 +111,7 @@ class PtychoTomo(TomoExpt):
             whether to skip the file check when adding an hdf5 to the list
             of projection files. Usually this is true when you are doing a
             typical stacking and sure no other hdf5 files are present in
-            proj_dir. Default to True.
+            proj_dir. Default to False.
         kwargs : dict, optional
             options for ptycho-tomography
 
@@ -231,6 +231,7 @@ class PtychoTomo(TomoExpt):
 
     def _find_proj(self, fp):
         pty_file = None
+        to_include = False
         if h5py.is_hdf5(fp):
             if any([self._assume_ptypy_file, self._assume_ptyrex_file]):
                 # no check, quicker but less safe
