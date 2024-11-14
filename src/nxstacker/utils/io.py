@@ -200,6 +200,11 @@ def pad2stack(proj, stack_shape):
         the padded image, return the same image if they are of equal
         size.
 
+    Raises
+    ------
+    either the y or x dimension of the projection is larger than the
+    stack shape.
+
     """
     proj = np.asarray(proj)
     proj_y, proj_x = proj.shape
