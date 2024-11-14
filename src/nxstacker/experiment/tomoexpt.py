@@ -13,11 +13,10 @@ from itertools import chain
 from pathlib import Path
 from types import MappingProxyType
 
-import numpy as np
-
 from nxstacker.io.nxtomo.minimal import LINK_DATA, LINK_ROT_ANG, create_minimal
 from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import (
+    CompressionBlosc,
     Directory,
     ExperimentFacility,
     FilePath,
@@ -49,6 +48,7 @@ class TomoExpt:
     sort_by_angle = FixedValue()
     pad_to_max = FixedValue()
     compress = FixedValue()
+    compression_settings = FixedValue()
     metadata = FixedValue()
     nxtomo_output_files = FixedValue()
     logger = FixedValue()
@@ -86,6 +86,12 @@ class TomoExpt:
         self.pad_to_max = pad_to_max
         self.compress = compress
 
+        # define the instance holding the compression attributes
+        if self.compress:
+            self.compression_settings = CompressionBlosc()
+        else:
+            self.compression_settings = None
+
         self.projections = []
         self.stack_shape = ()
 
@@ -118,7 +124,7 @@ class TomoExpt:
             stack_shape,
             stack_dtype,
             self.facility,
-            compress=self.compress,
+            compression_settings=self.compression_settings,
             **md_dict,
         )
         return filename
@@ -203,38 +209,6 @@ class TomoExpt:
                 # reach the first placeholder
                 break
         self._proj_dir = Path(proj_dir).resolve()
-
-    def _save_proj_to_dset(self, fh, proj_index, proj, angle):
-        proj_dset = fh[self.proj_dset_path]
-        proj_dset[proj_index, :, :] = proj
-
-        rot_ang_dset = fh[self.rot_ang_dset_path]
-        rot_ang_dset[proj_index] = angle
-
-    def _resize_proj(self, proj, stack_shape):
-        proj_y, proj_x = proj.shape
-        stack_y, stack_x = stack_shape[1:]
-
-        if self.pad_to_max and (proj_y < stack_y or proj_x < stack_x):
-            # pad to stack shape if the projection is smaller than
-            # others
-            y_diff = stack_y - proj_y
-            top = y_diff // 2
-            bottom = top + y_diff % 2
-
-            x_diff = stack_x - proj_x
-            left = x_diff // 2
-            right = left + x_diff % 2
-
-            final = np.pad(
-                proj,
-                ((top, bottom), (left, right)),
-                mode="symmetric",
-            )
-        else:
-            final = proj
-
-        return final
 
     def _gather_raw_dir_from_proj_file(self):
         if self.num_projections != 0:

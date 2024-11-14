@@ -3,7 +3,9 @@ import subprocess
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+import blosc
 import h5py
+import numpy as np
 
 
 def file_has_paths(file_path, paths):
@@ -177,3 +179,132 @@ def is_staging_area(directory):
         return False
     else:
         return True
+
+
+def pad2stack(proj, stack_shape):
+    """Pad a projection to match the stack shape.
+
+    It assumes the projection of shape (y, x) is equal or smaller than
+    the stack (n, sy, sx), i.e. y <= sy and x <= sx, otherwise it raises
+    ValueError.
+
+    Parameters
+    ----------
+    proj : array-like, 2D
+        the projection image to be resized.
+    stack_shape : tuple, 3D
+        the shape of the stack where the projection is being stacked to.
+
+    Returns
+    -------
+        the padded image, return the same image if they are of equal
+        size.
+
+    Raises
+    ------
+    either the y or x dimension of the projection is larger than the
+    stack shape.
+
+    """
+    proj = np.asarray(proj)
+    proj_y, proj_x = proj.shape
+    stack_y, stack_x = stack_shape[1:]
+
+    if proj_y > stack_y:
+        msg = (
+            f"The y dimension of projection ({proj_y}) is larger than the "
+            f"y dimension of the stack ({stack_y})."
+        )
+        raise ValueError(msg)
+
+    if proj_x > stack_x:
+        msg = (
+            f"The x dimension of projection ({proj_x}) is larger than the "
+            f"x dimension of the stack ({stack_x})."
+        )
+        raise ValueError(msg)
+
+    if proj_y < stack_y or proj_x < stack_x:
+        # pad to stack shape if the projection is smaller than
+        # others
+        y_diff = stack_y - proj_y
+        top = y_diff // 2
+        bottom = top + y_diff % 2
+
+        x_diff = stack_x - proj_x
+        left = x_diff // 2
+        right = left + x_diff % 2
+
+        final = np.pad(
+            proj,
+            ((top, bottom), (left, right)),
+            mode="symmetric",
+        )
+    else:
+        final = proj
+
+    return final
+
+
+def save_proj_to_h5(
+    fh, proj_index, proj_data, angle_data, compression_settings=None
+):
+    """Write projection and its rotation angle to an HDF5 file.
+
+    It uses direct chunk write.
+
+    Parameters
+    ----------
+    fh : h5py.File
+        the h5py file handler where the projection and rotation angle
+        will be saved to.
+    proj_index : int
+        the index of this projection.
+    proj_data : dict
+        a dictionary with keys 'data' and 'key', the projection to be
+        saved and the corresponding dataset key respectively.
+    angle_data : dict
+        a dictionary with keys 'data' and 'key', the rotation angle to
+        be saved and the corresponding dataset key respectively.
+    compression_settings : utils.model.CompressionBlosc, optional
+        the instance that encapsulates Blosc compression options.
+        Default to None, no compression.
+
+    Raises
+    ------
+    KeyError
+        if either 'proj_data' or 'angle_data' misses one of the
+        following keys: 'data', 'key'.
+
+    """
+    # raise KeyError directly, don't default to anything
+    proj = np.asarray(proj_data["data"])
+    proj_dset_key = proj_data["key"]
+    angle = float(angle_data["data"])
+    rot_ang_dset_key = angle_data["key"]
+
+    # ensure it is contiguous
+    proj = np.ascontiguousarray(proj)
+
+    if compression_settings is None:
+        # no compression
+        saved = proj.tobytes()
+    else:
+        # blosc compression
+        ptr_proj = proj.__array_interface__["data"][0]
+        comopts = compression_settings.comopts
+        cname = compression_settings.compressor
+        saved = blosc.compress_ptr(
+            ptr_proj,
+            items=proj.size,
+            typesize=proj.itemsize,
+            clevel=comopts[4],
+            shuffle=comopts[5],
+            cname=cname,
+        )
+
+    proj_dset = fh[proj_dset_key]
+    proj_dset.id.write_direct_chunk((proj_index, 0, 0), saved)
+
+    rot_ang_dset = fh[rot_ang_dset_key]
+    rot_ang_dset[proj_index] = angle

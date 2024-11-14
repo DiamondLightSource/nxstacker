@@ -25,7 +25,7 @@ HELP_EXCLUDE_ANGLE = "rotation angle(s) that should be excluded from"
 HELP_SORT_BY_ANGLE = "sort the projections by their rotation angles"
 HELP_PAD_TO_MAX = "pad projection to the maximum size of the stack"
 HELP_COMPRESS = "compress the NXtomo file"
-HELP_VERIFY_PROJ_FILE = "check if the projection file is valid"
+HELP_SKIP_CHECK = "skip the validation of the projection file"
 HELP_SAVE_COMPLEX = "save the complex result from ptychography"
 HELP_SAVE_MODULUS = "save the modulus result from ptychography"
 HELP_SAVE_PHASE = "save the phase result from ptychography"
@@ -112,10 +112,10 @@ def _parser_common():
         "--compress", action="store_true", default=False, help=HELP_COMPRESS
     )
     parser.add_argument(
-        "--verify-proj-file",
-        action="store_false",
+        "--skip-check",
+        action="store_true",
         dest="skip_proj_file_check",
-        help=HELP_VERIFY_PROJ_FILE,
+        help=HELP_SKIP_CHECK,
     )
 
     return parser

@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from nxstacker.utils.io import is_staging_area, top_level_dir
+import numpy as np
+import pytest
+
+from nxstacker.utils.io import is_staging_area, pad2stack, top_level_dir
 
 
 class TestTopLevelDir:
@@ -34,3 +37,26 @@ class TestIsStagingArea:
         input_dir = Path("/abc/dls/staging/dls/i99/data/2047/cm12345-1")
 
         assert not is_staging_area(input_dir)
+
+
+class TestPad2Stack:
+    def test_proj_smaller(self):
+        proj = np.arange(7 * 8).reshape(7, 8)
+        stack_shape = (3, 10, 11)
+        padded = pad2stack(proj, stack_shape)
+
+        assert padded.shape == (10, 11)
+
+    def test_proj_equal(self):
+        proj = np.arange(10 * 11).reshape(10, 11)
+        stack_shape = (3, 10, 11)
+        padded = pad2stack(proj, stack_shape)
+
+        assert padded.shape == (10, 11)
+
+    def test_proj_larger(self):
+        proj = np.arange(10 * 12).reshape(10, 12)
+        stack_shape = (3, 10, 11)
+
+        with pytest.raises(ValueError, match="larger"):
+            pad2stack(proj, stack_shape)

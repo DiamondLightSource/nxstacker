@@ -4,7 +4,6 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from hdf5plugin import Blosc
 
 from nxstacker.utils.io import get_version, user_name
 from nxstacker.utils.model import UKtz
@@ -55,7 +54,7 @@ def create_minimal(
     stack_dtype,
     facility,
     *,
-    compress=False,
+    compression_settings=None,
     title=None,
     sample_description=None,
     detector_distance=None,
@@ -76,9 +75,9 @@ def create_minimal(
         the data type of the stack
     facility : FacilityInfo
         the facility information
-    compress : bool, optional
-        whether to apply compression (Blosc) to the NXtomo file. Default
-        to False.
+    compression_settings : CompressionBlosc or None, optional
+        the instance hodling attributes for Blosc compression. Default
+        to None, no compression is applied.
     title : str, optional
         title of the file. Default to None, skip saving it.
     sample_description : str, optional
@@ -112,7 +111,7 @@ def create_minimal(
             x_pixel_size=x_pixel_size,
             y_pixel_size=y_pixel_size,
             detector_distance=detector_distance,
-            compress=compress,
+            compression_settings=compression_settings,
         )
 
         _create_sample(f, nframe, sample_description=sample_description)
@@ -168,18 +167,19 @@ def _create_detector(
     y_pixel_size=None,
     detector_distance=None,
     *,
-    compress=False,
+    compression_settings=None,
 ):
     grp_detector = root.create_group(str(NX_DETECTOR))
     grp_detector.attrs["NX_class"] = "NXdetector"
 
-    if compress:
-        compression_filter = Blosc("zstd", 9, Blosc.BITSHUFFLE)
-        compression = compression_filter.filter_id
-        compression_opts = compression_filter.filter_options
-    else:
+    if compression_settings is None:
+        # no compression
         compression = None
         compression_opts = None
+    else:
+        # with compression
+        compression = compression_settings.compression_id
+        compression_opts = compression_settings.comopts
     chunks = (1, stack_shape[1], stack_shape[2])
 
     grp_detector.create_dataset(
