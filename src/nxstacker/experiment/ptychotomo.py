@@ -13,6 +13,7 @@ from nxstacker.io.ptycho.ptyrex import PtyREXFile
 from nxstacker.utils.io import (
     file_has_paths,
     pad2stack,
+    save_proj_to_h5,
 )
 from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import FixedValue
@@ -567,6 +568,36 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    def _save_cplx_to_file(self, k, f_cplx, complex_, angle_data):
+        if f_cplx and complex_ is not None:
+            cplx_data = {
+                "data": complex_,
+                "key": self.proj_dset_path,
+            }
+            save_proj_to_h5(
+                f_cplx, k, cplx_data, angle_data, self.compression_settings
+            )
+
+    def _save_modl_to_file(self, k, f_modl, modulus, angle_data):
+        if f_modl and modulus is not None:
+            modl_data = {
+                "data": modulus,
+                "key": self.proj_dset_path,
+            }
+            save_proj_to_h5(
+                f_modl, k, modl_data, angle_data, self.compression_settings
+            )
+
+    def _save_phas_to_file(self, k, f_phas, phase, angle_data):
+        if f_phas and phase is not None:
+            phas_data = {
+                "data": phase,
+                "key": self.proj_dset_path,
+            }
+            save_proj_to_h5(
+                f_phas, k, phas_data, angle_data, self.compression_settings
+            )
 
     def _read_cplx_modl_phas(
         self, k, pty_file, mode, read_cplx, read_modl, read_phas, queue
