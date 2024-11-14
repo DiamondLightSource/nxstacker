@@ -480,6 +480,25 @@ class PtychoTomo(TomoExpt):
 
         return (self.num_projections, *ob_sh)
 
+    def _create_cm(self, nxtomo_cplx, nxtomo_modl, nxtomo_phas):
+        cplx_cm = (
+            nullcontext()
+            if nxtomo_cplx is None
+            else h5py.File(nxtomo_cplx, "r+")
+        )
+        modl_cm = (
+            nullcontext()
+            if nxtomo_modl is None
+            else h5py.File(nxtomo_modl, "r+")
+        )
+        phas_cm = (
+            nullcontext()
+            if nxtomo_phas is None
+            else h5py.File(nxtomo_phas, "r+")
+        )
+
+        return cplx_cm, modl_cm, phas_cm
+
     def _nxtomo_cplx_minimal(self):
         if self._save_complex and all(
             pty_file.avail_complex for pty_file in self._projections
