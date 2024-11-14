@@ -10,7 +10,10 @@ from nxstacker.experiment.tomoexpt import TomoExpt
 from nxstacker.io.nxtomo.metadata import MetadataPtycho
 from nxstacker.io.ptycho.ptypy import PtyPyFile
 from nxstacker.io.ptycho.ptyrex import PtyREXFile
-from nxstacker.utils.io import file_has_paths
+from nxstacker.utils.io import (
+    file_has_paths,
+    pad2stack,
+)
 from nxstacker.utils.logger import create_logger
 from nxstacker.utils.model import FixedValue
 from nxstacker.utils.parse import quote_iterable, unique_or_raise
@@ -564,6 +567,82 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    def _read_cplx_modl_phas(
+        self, k, pty_file, mode, read_cplx, read_modl, read_phas, queue
+    ):
+        """Put projections image into a queue or return them."""
+        rot_ang = pty_file.id_angle
+
+        complex_ = None
+        modulus = None
+        phase = None
+
+        if pty_file.avail_complex:
+            # if complex data is present, use it to get
+            # modulus/phase to reduce latency from i/o
+            ob_cplx = pty_file.object_complex(mode=mode)
+
+            if read_cplx:
+                if self.pad_to_max:
+                    complex_ = pad2stack(ob_cplx, self.stack_shape)
+                else:
+                    complex_ = ob_cplx
+
+            if read_modl:
+                ob_modl = np.abs(ob_cplx)
+                if self.pad_to_max:
+                    modulus = pad2stack(ob_modl, self.stack_shape)
+                else:
+                    modulus = ob_modl
+
+            if read_phas:
+                if self._remove_ramp:
+                    ob_cplx = remove_phase_ramp(ob_cplx)
+                if self._median_norm:
+                    ob_cplx = phase_shift(
+                        ob_cplx,
+                        -np.median(np.angle(ob_cplx)),
+                    )
+
+                ob_phas = np.angle(ob_cplx)
+                if self.pad_to_max:
+                    phase = pad2stack(ob_phas, self.stack_shape)
+                else:
+                    phase = ob_phas
+
+                if self._unwrap_phase:
+                    phase = unwrap_phase(phase)
+
+        else:
+            # complex not availabe, only save modulus/phase
+            if read_modl:
+                ob_modl = pty_file.object_modulus(mode=mode)
+                if self.pad_to_max:
+                    modulus = pad2stack(ob_modl, self.stack_shape)
+                else:
+                    modulus = ob_modl
+
+            if read_phas:
+                if self._remove_ramp or self._median_norm:
+                    # log warning here
+                    pass
+                ob_phas = pty_file.object_phase(mode=mode)
+                if self.pad_to_max:
+                    phase = pad2stack(ob_phas, self.stack_shape)
+                else:
+                    phase = ob_phas
+
+                if self._unwrap_phase:
+                    phase = unwrap_phase(phase)
+
+        if queue is None:
+            # serial
+            return k, rot_ang, complex_, modulus, phase
+
+        # parallel, put results in the queue
+        queue.put((k, rot_ang, complex_, modulus, phase))
+        return None
 
     def _log_enter_stack_projection(self, level, name):
         st = super()._log_enter_stack_projection(level, name)
