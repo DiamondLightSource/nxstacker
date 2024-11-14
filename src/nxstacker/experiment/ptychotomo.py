@@ -1,6 +1,6 @@
 from collections import deque
 from contextlib import nullcontext
-from multiprocessing import Pool
+from multiprocessing import Manager, Pool, Process
 from types import MappingProxyType
 
 import h5py
@@ -377,75 +377,80 @@ class PtychoTomo(TomoExpt):
 
         nxtomo_cplx, nxtomo_modl, nxtomo_phas = self._nxtomo_minimal()
 
-        cplx_cm = (
-            nullcontext()
-            if nxtomo_cplx is None
-            else h5py.File(nxtomo_cplx, "r+")
-        )
-        modl_cm = (
-            nullcontext()
-            if nxtomo_modl is None
-            else h5py.File(nxtomo_modl, "r+")
-        )
-        phas_cm = (
-            nullcontext()
-            if nxtomo_phas is None
-            else h5py.File(nxtomo_phas, "r+")
-        )
+        read_cplx = nxtomo_cplx is not None
+        read_modl = nxtomo_modl is not None
+        read_phas = nxtomo_phas is not None
 
-        with cplx_cm as f_cplx, modl_cm as f_modl, phas_cm as f_phas:
-            for k, pty_file in enumerate(self._projections):
-                rot_ang = pty_file.id_angle
+        # parallelise when more than 50 projections
+        parallel = self.num_projections >= 50
 
-                if pty_file.avail_complex:
-                    # if complex data is present, use it to get
-                    # modulus/phase to reduce latency from I/O
-                    ob_cplx = pty_file.object_complex(mode=mode)
+        if parallel:
+            ncpus = num_cpus()
 
-                    if f_cplx:
-                        complex_ = self._resize_proj(ob_cplx, self.stack_shape)
+            # to avoid over-subscribe we set the blosc thread to 1
+            # if doing multiprocessing
+            if self.compression_settings is not None:
+                self.compression_settings.set_nthreads(1)
 
-                        self._save_proj_to_dset(f_cplx, k, complex_, rot_ang)
+            with Manager() as manager:
+                queue = manager.Queue()
 
-                    if f_modl:
-                        ob_modl = np.abs(ob_cplx)
-                        modulus = self._resize_proj(ob_modl, self.stack_shape)
+                # initiate the hdf5 writing process
+                write_proc = Process(
+                    target=self._parallel_cplx_modl_phas,
+                    args=(nxtomo_cplx, nxtomo_modl, nxtomo_phas, queue),
+                )
+                write_proc.start()
 
-                        self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
+                with Pool(ncpus) as pool:
+                    tasks = (
+                        (
+                            k,
+                            pty_file,
+                            mode,
+                            read_cplx,
+                            read_modl,
+                            read_phas,
+                            queue,
+                        )
+                        for k, pty_file in enumerate(self._projections)
+                    )
+                    chunk_sz = self.num_projections // ncpus + 1
 
-                    if f_phas:
-                        if self._remove_ramp:
-                            ob_cplx = remove_phase_ramp(ob_cplx)
-                        if self._median_norm:
-                            ob_cplx = phase_shift(
-                                ob_cplx,
-                                -np.median(np.angle(ob_cplx)),
-                            )
+                    # distribute the reading to a pool of workers
+                    # the result is put into a queue when they are read
+                    pool.starmap_async(
+                        self._read_cplx_modl_phas, tasks, chunksize=chunk_sz
+                    )
 
-                        ob_phas = np.angle(ob_cplx)
-                        phase = self._resize_proj(ob_phas, self.stack_shape)
-                        if self._unwrap_phase:
-                            phase = unwrap_phase(phase)
+                    # .join before .close, essential
+                    pool.close()
+                    pool.join()
 
-                        self._save_proj_to_dset(f_phas, k, phase, rot_ang)
-                else:
-                    # complex not availabe, only save modulus/phase
-                    if f_modl:
-                        ob_modl = pty_file.object_modulus(mode=mode)
-                        modulus = self._resize_proj(ob_modl, self.stack_shape)
+                # send termination signal to the queue
+                queue.put(None)
 
-                        self._save_proj_to_dset(f_modl, k, modulus, rot_ang)
-
-                    if f_phas:
-                        if self._remove_ramp or self._median_norm:
-                            # log warning here
-                            pass
-                        ob_phas = pty_file.object_phase(mode=mode)
-                        phase = self._resize_proj(ob_phas, self.stack_shape)
-                        if self._unwrap_phase:
-                            phase = unwrap_phase(phase)
-
-                        self._save_proj_to_dset(f_phas, k, phase, rot_ang)
+                write_proc.join()
+        else:
+            # serial
+            queue = None
+            cplx_cm, modl_cm, phas_cm = self._create_cm(
+                nxtomo_cplx, nxtomo_modl, nxtomo_phas
+            )
+            with cplx_cm as f_cplx, modl_cm as f_modl, phas_cm as f_phas:
+                for k, pty_file in enumerate(self._projections):
+                    proj_pack = self._read_cplx_modl_phas(
+                        k,
+                        pty_file,
+                        mode,
+                        read_cplx,
+                        read_modl,
+                        read_phas,
+                        queue,
+                    )
+                    self._serial_cplx_modl_phas(
+                        proj_pack, f_cplx, f_modl, f_phas
+                    )
 
         nxtomo_files = []
         if nxtomo_cplx is not None:
@@ -568,6 +573,46 @@ class PtychoTomo(TomoExpt):
             nxtomo_phas = None
 
         return nxtomo_phas
+
+    def _serial_cplx_modl_phas(self, proj_pack, f_cplx, f_modl, f_phas):
+        """Write serially."""
+        # h5py File objects are available
+        k, rot_ang, complex_, modulus, phase = proj_pack
+        angle_data = {
+            "data": rot_ang,
+            "key": self.rot_ang_dset_path,
+        }
+
+        self._save_cplx_to_file(k, f_cplx, complex_, angle_data)
+        self._save_modl_to_file(k, f_modl, modulus, angle_data)
+        self._save_phas_to_file(k, f_phas, phase, angle_data)
+
+    def _parallel_cplx_modl_phas(
+        self, nxtomo_cplx, nxtomo_modl, nxtomo_phas, queue
+    ):
+        """Write in parallel using data from queue."""
+        cplx_cm, modl_cm, phas_cm = self._create_cm(
+            nxtomo_cplx, nxtomo_modl, nxtomo_phas
+        )
+
+        with cplx_cm as f_cplx, modl_cm as f_modl, phas_cm as f_phas:
+            while True:
+                proj_pack = queue.get()
+
+                # signal to terminate
+                if proj_pack is None:
+                    break
+
+                # if not terminated, unpack
+                k, rot_ang, complex_, modulus, phase = proj_pack
+                angle_data = {
+                    "data": rot_ang,
+                    "key": self.rot_ang_dset_path,
+                }
+
+                self._save_cplx_to_file(k, f_cplx, complex_, angle_data)
+                self._save_modl_to_file(k, f_modl, modulus, angle_data)
+                self._save_phas_to_file(k, f_phas, phase, angle_data)
 
     def _save_cplx_to_file(self, k, f_cplx, complex_, angle_data):
         if f_cplx and complex_ is not None:
