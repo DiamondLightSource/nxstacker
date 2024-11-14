@@ -86,6 +86,12 @@ class TomoExpt:
         self.pad_to_max = pad_to_max
         self.compress = compress
 
+        # define the instance holding the compression attributes
+        if self.compress:
+            self.compression_settings = CompressionBlosc()
+        else:
+            self.compression_settings = None
+
         self.projections = []
         self.stack_shape = ()
 
@@ -112,12 +118,6 @@ class TomoExpt:
         # no need to pass rotation_angle
         with suppress(KeyError):
             md_dict.pop("rotation_angle")
-
-        # define the instance holding the compression attributes
-        if self.compress:
-            self.compression_settings = CompressionBlosc()
-        else:
-            self.compression_settings = None
 
         create_minimal(
             filename,
