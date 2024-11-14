@@ -4,6 +4,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+
 from nxstacker.utils.model import XRFTransitionList
 
 

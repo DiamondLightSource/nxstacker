@@ -1,63 +1,64 @@
 import h5py
 import numpy as np
 import pytest
+
 from nxstacker.tomojoin import tomojoin
 
 from .prepare_facility import PrepareI08_1
 from .prepare_proj_file import PreparePtyPyFile
 
 
-@pytest.fixture()
+@pytest.fixture
 def start_scan():
     return 32145
 
 
-@pytest.fixture()
+@pytest.fixture
 def end_scan():
     return 32151
 
 
-@pytest.fixture()
+@pytest.fixture
 def visit_id():
     return "cm69393-1"
 
 
-@pytest.fixture()
+@pytest.fixture
 def detector_distance():
     return 0.072
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_name():
     return "butterfly"
 
 
-@pytest.fixture()
+@pytest.fixture
 def rotation_angle():
     return -31.8
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_x_value_set():
     return np.linspace(-8, 8, num=31)
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_y_value_set():
     return np.linspace(-8, 8, num=21)
 
 
-@pytest.fixture()
+@pytest.fixture
 def x_px_size():
     return 3.21e-6
 
 
-@pytest.fixture()
+@pytest.fixture
 def y_px_size():
     return 3.21e-6
 
 
-@pytest.fixture()
+@pytest.fixture
 def scan_list(tmp_path, start_scan, end_scan):
     scan_nr = list(range(start_scan, end_scan + 1))
 

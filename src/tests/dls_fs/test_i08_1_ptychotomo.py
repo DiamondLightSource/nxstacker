@@ -1,10 +1,11 @@
 import pytest
+
 from nxstacker.tomojoin import tomojoin
 
 from . import only_dls_file_system
 
 
-@pytest.fixture()
+@pytest.fixture
 def scan_list(tmp_path):
     scan_nr = [
         32080,
