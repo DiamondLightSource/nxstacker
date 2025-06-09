@@ -105,6 +105,7 @@ class PtyPyFile(ProjectionFile):
         regexes = (
             re.compile(r".*-(\d+)\.nxs$"),
             re.compile(r".*-(\d+)_processed\.nxs$"),
+            re.compile(r".(\d+)\.ptyd$"),
         )
 
         for regex in regexes:
@@ -143,13 +144,20 @@ class PtyPyFile(ProjectionFile):
                 f"{self.path_names['scan_names']}/"
                 f"{self._scan_name}/data/intensities/file"
             )
+            self.raw_dfile_path = (
+                f"{self.path_names['scan_names']}/"
+                f"{self._scan_name}/data/dfile"
+            )
             self.px_sz_path = (
                 f"{self.path_names['object']}/{self._storage_name}/_psize"
             )
 
             # get the path of the raw file
-            self.raw_file = f[self._raw_file_path][()]
-
+            try:
+                self.raw_file = f[self.raw_file_path][()]
+            except:
+                self.raw_file = f[self.raw_dfile_path][()]
+                
     def _overwrite_raw_dir(self):
         """Overwrite the _raw_dir attribute."""
         if is_staging_area(self._raw_file):
