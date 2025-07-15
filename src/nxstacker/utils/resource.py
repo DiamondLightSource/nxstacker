@@ -1,17 +1,17 @@
 import os
 
 
-def num_cpus(capped_at=32):
+def num_cpus(capped_at=8):
     """Return the capped number of available CPUs.
 
     This is to prevent using all the available CPUs when this is
-    executed in an NX session, for example, while using more than 32 CPUs
+    executed in an NX session, for example, while using more than 8 CPUs
     does not gain much.
 
     Parameters
     ----------
     capped_at : int, optional
-        the maximum number of CPUs to be used. Default to 32.
+        the maximum number of CPUs to be used. Default to 8.
 
     """
     capped_at = max(capped_at, 1)
