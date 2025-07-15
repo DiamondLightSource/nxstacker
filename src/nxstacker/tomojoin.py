@@ -52,8 +52,10 @@ def tomojoin(
         the directory where the projections are stored. If it is
         None, the current working directory is used. Default to None.
     proj_file : str or None
-        the projection file with placeholder %(scan) from include_scan
-        and %(proj) from include_proj. Default to None.
+        the projection file with placeholder %(scan) deduced from
+        'from_scan', 'scan_list' and 'exclude_scan', and %(proj) deduced
+        from 'from_proj', 'proj_list' and 'exclude_proj'. Default to
+        None.
     nxtomo_dir : pathlib.Path, str or None
         the directory where the NXtomo files will be saved. If it is
         None, the current working directory is used. Default to None.
