@@ -32,6 +32,7 @@ class PtyPyFile(ProjectionFile):
     object_path = FixedValue()
     probe_path = FixedValue()
     raw_file_path = FixedValue()
+    raw_dfile_path = FixedValue()
     px_sz_path = FixedValue()
     raw_file = FilePath(must_exist=True)
     object_shape = FixedValue()
@@ -145,19 +146,24 @@ class PtyPyFile(ProjectionFile):
                 f"{self._scan_name}/data/intensities/file"
             )
             self.raw_dfile_path = (
-                f"{self.path_names['scan_names']}/"
-                f"{self._scan_name}/data/dfile"
+                f"{self.path_names['scan_names']}/{self._scan_name}/data/dfile"
             )
             self.px_sz_path = (
                 f"{self.path_names['object']}/{self._storage_name}/_psize"
             )
 
             # get the path of the raw file
-            try:
+            if self.raw_file_path in f:
+                # the raw file (the actual scan file) was used
                 self.raw_file = f[self.raw_file_path][()]
-            except:
-                self.raw_file = f[self.raw_dfile_path][()]
-                
+            elif self.raw_dfile_path in f:
+                # the raw data is in the .ptyd file
+                partial_dfile = f[self.raw_dfile_path][()].decode()
+                self.raw_file = self._file_path.parent / "../" / partial_dfile
+            else:
+                msg = "No valid file storing the raw data can be found."
+                raise ValueError(msg)
+
     def _overwrite_raw_dir(self):
         """Overwrite the _raw_dir attribute."""
         if is_staging_area(self._raw_file):
@@ -195,7 +201,7 @@ class PtyPyFile(ProjectionFile):
                 mode_str = "mode" + "s" * (num_modes > 1)
                 msg = (
                     f"The object has {num_modes} {mode_str} and the "
-                    f"maximum mode index is {num_modes-1}, but {mode} "
+                    f"maximum mode index is {num_modes - 1}, but {mode} "
                     "was given."
                 )
                 raise IndexError(msg)
@@ -242,7 +248,7 @@ class PtyPyFile(ProjectionFile):
                 mode_str = "mode" + "s" * (num_modes > 1)
                 msg = (
                     f"The probe has {num_modes} {mode_str} and the "
-                    f"maximum mode index is {num_modes-1}, but {mode} "
+                    f"maximum mode index is {num_modes - 1}, but {mode} "
                     "was given."
                 )
                 raise IndexError(msg)
