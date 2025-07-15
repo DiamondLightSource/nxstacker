@@ -183,8 +183,9 @@ the current working directory is used.
 
 - *proj_file*
 
-the projection file with placeholder `%(scan)` from *include_scan*
-and `%(proj)` from *include_proj*. If it is `None`, it will search in
+the projection file with placeholder `%(scan)` deduced from *from_scan*,
+*scan_list* and *exclude_scan*, and `%(proj)` deduced from *from_proj*,
+*proj_list* and *exclude_proj*. If it is `None`, it will search in
 *proj_dir*.  If the name of the projection files follow a pattern, it is
 recommended to use this as it avoids going through files and directories when
 searching in *proj_dir*.
