@@ -324,15 +324,22 @@ class PtychoTomo(TomoExpt):
         now. They will also be sorted if it is required.
         """
         self._metadata = MetadataPtycho(self._projections, self._facility)
-        self._metadata.fetch_metadata()
 
-        # with rotation angles the projection files can be updated and
-        # sorted if desired
-        self._arrange_by_angle()
+        if self.skip_proj_file_check:
+            angle_list = self.include_angle
+            self._metadata.fetch_metadata(angle_list=angle_list)
+
+            self._arrange_by_angle(update_only=True)
+        else:
+            self._metadata.fetch_metadata()
+
+            # with rotation angles the projection files can be updated and
+            # sorted if desired
+            self._arrange_by_angle()
 
         _ = self.check_missing_projections()
 
-    def _arrange_by_angle(self):
+    def _update_angle_id(self):
         # update id_angle for the projections
         for pty_file, rot_ang in zip(
             self._projections,
@@ -340,6 +347,12 @@ class PtychoTomo(TomoExpt):
             strict=False,
         ):
             pty_file._id_angle = rot_ang
+
+    def _arrange_by_angle(self, *, update_only=False):
+        self._update_angle_id()
+
+        if update_only:
+            return
 
         if self.sort_by_angle:
             self._projections = sorted(
