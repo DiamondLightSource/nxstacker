@@ -34,6 +34,7 @@ def tomojoin(
     quiet=False,
     dry_run=False,
     skip_proj_file_check=False,
+    ignore_metadata_from_raw=False,
     **kwargs,
 ):
     """Combine projections to produce an NXtomo file.
@@ -108,6 +109,12 @@ def tomojoin(
         of projection files. Usually this is true when you are doing a
         typical stacking and sure no other hdf5 files are present in
         proj_dir. Default to False.
+    ignore_metadata_from_raw : bool, optional
+        whether to ignore metadata obtained from the raw files because
+        of their unavailability or speed. If this is True,
+        scan_list/proj_list and angle_list must be provided as those
+        information are no longer obtained from raw files. Default to
+        False.
     kwargs : dict, optional
         options for ptycho-tomography
 
