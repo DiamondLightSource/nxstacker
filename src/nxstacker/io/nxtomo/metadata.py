@@ -10,8 +10,9 @@ class NXtomoMetadata:
 
     facility = ExperimentFacility()
     projections = FixedValue()
+    ignore_raw = FixedValue()
 
-    def __init__(self, projections, facility):
+    def __init__(self, projections, facility, *, ignore_raw=False):
         """Initialisse metadata of a NXtomo file.
 
         Parameters
@@ -23,10 +24,17 @@ class NXtomoMetadata:
             already contains the details, or a str, where an instance of
             FacilityInfo is initialised, or None, where the
             corresponding facility is deduced from given directories.
+        ignore_raw : bool, optional
+            whether to ignore metadata obtained from the raw files because
+            of their unavailability or speed. If this is True,
+            scan_list/proj_list and angle_list must be provided as those
+            information are no longer obtained from raw files. Default to
+            False.
 
         """
         self.projections = list(projections)
         self.facility = facility
+        self.ignore_raw = ignore_raw
 
         self.title = "title"
         self.sample_description = "sample description"
@@ -74,19 +82,20 @@ class NXtomoMetadata:
 class MetadataPtycho(NXtomoMetadata):
     """Represent metadata for a ptycho-tomo experiment."""
 
-    def __init__(self, projections, facility):
+    def __init__(self, projections, facility, *, ignore_raw=False):
         """Initialise the ptychography metadata."""
-        super().__init__(projections, facility)
+        super().__init__(projections, facility, ignore_raw=ignore_raw)
 
     def fetch_metadata(self):
         """Find the metadata of the current projections and facility."""
         self.title = self.title_from_scan()
         self.sample_description = self.description_from_scan()
-        self.rotation_angle = self.find_rotation_angle()
         self.detector_distance = self.find_detector_dist()
         self.x_pixel_size, self.y_pixel_size = self.find_pixel_size()
-        self.start_time = self.start_time_from_scan()
-        self.end_time = self.end_time_from_scan()
+        if not self.ignore_raw:
+            self.rotation_angle = self.find_rotation_angle()
+            self.start_time = self.start_time_from_scan()
+            self.end_time = self.end_time_from_scan()
 
     def title_from_scan(self):
         """Determine the tile from scan ID."""
@@ -216,9 +225,9 @@ class MetadataPtycho(NXtomoMetadata):
 class MetadataXRF(NXtomoMetadata):
     """Represent metadata for a XRF-tomo experiment."""
 
-    def __init__(self, projections, facility):
+    def __init__(self, projections, facility, *, ignore_raw=False):
         """Initialise the XRF metadata."""
-        super().__init__(projections, facility)
+        super().__init__(projections, facility, ignore_raw=ignore_raw)
 
     def fetch_metadata(self):
         """Find the metadata of the current projections and facility."""

@@ -95,6 +95,7 @@ class ProjIdentifier:
         self.exclude = []
         self.identifiers = deque()
         self.id_type = id_type
+        self.only_from_file = False
 
         if from_range is not None:
             self.from_range = self.id_from_range(from_range)
@@ -105,14 +106,18 @@ class ProjIdentifier:
         if exclude is not None:
             self.exclude = generate_numbers(exclude, self.id_type)
 
-        # retain order, a bit inefficient
-        merged = list(dict.fromkeys(self.from_range)) + list(
-            dict.fromkeys(self.from_file)
-        )
-        merged = list(dict.fromkeys(merged))
-        for entry in merged:
-            if entry not in self.exclude:
-                self.identifiers.append(entry)
+        if from_file is not None and from_range is None and exclude is None:
+            self.only_from_file = True
+            self.identifiers = self.from_file
+        else:
+            # retain order, a bit inefficient
+            merged = list(dict.fromkeys(self.from_range)) + list(
+                dict.fromkeys(self.from_file)
+            )
+            merged = list(dict.fromkeys(merged))
+            for entry in merged:
+                if entry not in self.exclude:
+                    self.identifiers.append(entry)
 
         self.identifiers = tuple(self.identifiers)
 
