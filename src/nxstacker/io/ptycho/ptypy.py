@@ -34,7 +34,7 @@ class PtyPyFile(ProjectionFile):
     raw_file_path = FixedValue()
     raw_dfile_path = FixedValue()
     px_sz_path = FixedValue()
-    raw_file = FilePath(must_exist=True)
+    raw_file = FilePath()
     object_shape = FixedValue()
     object_complex_dtype = FixedValue()
     object_modulus_dtype = FixedValue()
@@ -159,7 +159,7 @@ class PtyPyFile(ProjectionFile):
             elif self.raw_dfile_path in f:
                 # the raw data is in the .ptyd file
                 partial_dfile = f[self.raw_dfile_path][()].decode()
-                self.raw_file = self._file_path.parent / "../" / partial_dfile
+                self.raw_file = self._file_path.parent / partial_dfile
             else:
                 msg = "No valid file storing the raw data can be found."
                 raise ValueError(msg)
