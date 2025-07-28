@@ -72,6 +72,8 @@ from a ptycho-tomography experiment in *i14*: the complex representation, its
 modulus and its phase. The successfully saved
 files are returned and stored in the `nxtomo_files` variable.
 
+#### Projection files following a particular naming pattern
+
 If the projection files follow a particular naming pattern, e.g.
 "/i14/dir/projections/stored/proj\_275019.hdf5",
 "/i14/dir/projections/stored/proj\_275020.hdf5" and
@@ -95,6 +97,8 @@ or via the CLI (the double quotation marks are essential):
 tomojoin ptycho --proj-file "/i14/dir/projections/stored/proj_%(scan).hdf5" ...
 ```
 
+#### Identifier specification
+
 The `from_scan` string is of the format \<START\>[-\<END\>[:\<STEP\>]]:
 
 - "100-105" means 100, 101, 102, 103, 104, 105,
@@ -115,6 +119,33 @@ rotation angles.
 To exclude certain scan numbers, you can use `exclude_scan`, it follows the
 format of \<START\>[-\<END\>[:\<STEP\>]]. Similarly, you can use `exclude_proj`
 for projection numbers and `exclude_angle` for rotation angles.
+
+#### Ignore metadata in raw files
+
+If the raw files are not available (e.g. have been archived) and you are able
+to provide the scans/projections/rotation angles via `scan_list`, `proj_list`
+or `angle_list`, respectively, you can use the parameter
+`ignore_metadata_from_raw` (or `--ignore-raw` from the CLI) to avoid fetching
+metadata from the raw files.
+
+```python
+from nxstacker.tomojoin import tomojoin
+
+nxtomo_files = tomojoin(
+    "ptychography",
+    scan_list="/i08-1/dir/scan_list.txt",
+    angle_list="/i08-1/dir/angle_list.txt",
+    ignore_metadata_from_raw=True,
+    ...
+)
+```
+
+or via the CLI:
+
+```console
+tomojoin ptycho --scan-list "/i08-1/dir/scan_list.txt"
+--angle-list="/i08-1/dir/angle_list.txt" --ignore-raw ...
+```
 
 See [API](#api) for more information about the parameters.
 
@@ -161,7 +192,7 @@ achieved via the CLI by using `--skip-check`.
 
 #### `tomojoin`
 
-There are 21 parameters for this function, excluding parameters specific to a
+There are 22 parameters for this function, excluding parameters specific to a
 particular type of experiment.
 
 ##### Common parameters
@@ -272,6 +303,13 @@ whether to perform a dry-run. Default to False.
 whether to skip the file check when adding an hdf5 to the list of projection
 files. Usually this is true when you are doing a typical stacking and sure no
 other hdf5 files are present in `proj_dir`. Default to False.
+
+- *ignore_metadata_from_raw*
+
+whether to ignore metadata obtained from the raw files because of their
+unavailability or speed. If this is True, `scan_list`/`proj_list` and
+`angle_list` must be provided as those information are no longer obtained from
+raw files. Default to False.
 
 ##### Specific to ptychography
 
