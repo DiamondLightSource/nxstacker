@@ -95,6 +95,7 @@ class ProjIdentifier:
         self.exclude = []
         self.identifiers = deque()
         self.id_type = id_type
+        self.only_from_file = False
 
         if from_range is not None:
             self.from_range = self.id_from_range(from_range)
@@ -115,6 +116,9 @@ class ProjIdentifier:
                 self.identifiers.append(entry)
 
         self.identifiers = tuple(self.identifiers)
+
+        if from_file is not None and from_range is None and exclude is None:
+            self.only_from_file = True
 
     def id_from_range(self, specifier):
         """Return numbers from <START>[-<END>[:<STEP>]]."""
