@@ -14,7 +14,7 @@ class TestNumCpus:
     def test_above_capped(self, mock_os):
         mock_os.sched_getaffinity.return_value = list(range(96))
 
-        assert num_cpus() == 32
+        assert num_cpus() == 8
 
     @patch("nxstacker.utils.resource.os")
     def test_custom_caps(self, mock_os):

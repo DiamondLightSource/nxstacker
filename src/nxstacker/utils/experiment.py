@@ -18,6 +18,7 @@ def select_tomo_expt(
     pad_to_max=True,
     compress=False,
     skip_proj_file_check=False,
+    ignore_raw=False,
     **kwargs,
 ):
     """Select the experiment for the projections.
@@ -69,6 +70,12 @@ def select_tomo_expt(
         of projection files. Usually this is true when you are doing a
         typical stacking and sure no other hdf5 files are present in
         proj_dir. Default to False.
+    ignore_raw : bool, optional
+        whether to ignore metadata obtained from the raw files because
+        of their unavailability or speed. If this is True,
+        scan_list/proj_list and angle_list must be provided as those
+        information are no longer obtained from raw files. Default to
+        False.
     kwargs : dict, optional
         optional arguments to different types of experiments
 
@@ -98,6 +105,7 @@ def select_tomo_expt(
                 pad_to_max=pad_to_max,
                 compress=compress,
                 skip_proj_file_check=skip_proj_file_check,
+                ignore_raw=ignore_raw,
                 **kwargs,
             )
         case "xrf":
@@ -114,6 +122,7 @@ def select_tomo_expt(
                 pad_to_max=pad_to_max,
                 compress=compress,
                 skip_proj_file_check=skip_proj_file_check,
+                ignore_raw=ignore_raw,
                 **kwargs,
             )
         case "dpc":

@@ -26,6 +26,7 @@ HELP_SORT_BY_ANGLE = "sort the projections by their rotation angles"
 HELP_PAD_TO_MAX = "pad projection to the maximum size of the stack"
 HELP_COMPRESS = "compress the NXtomo file"
 HELP_SKIP_CHECK = "skip the validation of the projection file"
+HELP_IGNORE_RAW = "do not get metadata from raw files"
 HELP_SAVE_COMPLEX = "save the complex result from ptychography"
 HELP_SAVE_MODULUS = "save the modulus result from ptychography"
 HELP_SAVE_PHASE = "save the phase result from ptychography"
@@ -116,6 +117,12 @@ def _parser_common():
         action="store_true",
         dest="skip_proj_file_check",
         help=HELP_SKIP_CHECK,
+    )
+    parser.add_argument(
+        "--ignore-raw",
+        action="store_true",
+        dest="ignore_metadata_from_raw",
+        help=HELP_IGNORE_RAW,
     )
 
     return parser

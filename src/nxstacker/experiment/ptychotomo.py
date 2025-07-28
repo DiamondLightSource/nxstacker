@@ -60,6 +60,7 @@ class PtychoTomo(TomoExpt):
         pad_to_max=True,
         compress=False,
         skip_proj_file_check=False,
+        ignore_raw=False,
         **kwargs,
     ):
         """Initialise the instance.
@@ -112,6 +113,12 @@ class PtychoTomo(TomoExpt):
             of projection files. Usually this is true when you are doing a
             typical stacking and sure no other hdf5 files are present in
             proj_dir. Default to False.
+        ignore_raw : bool, optional
+            whether to ignore metadata obtained from the raw files because
+            of their unavailability or speed. If this is True,
+            scan_list/proj_list and angle_list must be provided as those
+            information are no longer obtained from raw files. Default to
+            False.
         kwargs : dict, optional
             options for ptycho-tomography
 
@@ -129,6 +136,7 @@ class PtychoTomo(TomoExpt):
             pad_to_max=pad_to_max,
             compress=compress,
             skip_proj_file_check=skip_proj_file_check,
+            ignore_raw=ignore_raw,
         )
 
         self._save_complex = kwargs.get("save_complex", False)
@@ -323,8 +331,15 @@ class PtychoTomo(TomoExpt):
         self.include_angle as the value of rotation angle is available
         now. They will also be sorted if it is required.
         """
-        self._metadata = MetadataPtycho(self._projections, self._facility)
+        self._metadata = MetadataPtycho(
+            self._projections, self._facility, ignore_raw=self._ignore_raw
+        )
         self._metadata.fetch_metadata()
+
+        # if not using raw data to get the rotation angles, use the
+        # angle list directly
+        if self._ignore_raw:
+            self._metadata.rotation_angle = self.include_angle
 
         # with rotation angles the projection files can be updated and
         # sorted if desired
@@ -332,7 +347,7 @@ class PtychoTomo(TomoExpt):
 
         _ = self.check_missing_projections()
 
-    def _arrange_by_angle(self):
+    def _update_angle_id(self):
         # update id_angle for the projections
         for pty_file, rot_ang in zip(
             self._projections,
@@ -341,13 +356,20 @@ class PtychoTomo(TomoExpt):
         ):
             pty_file._id_angle = rot_ang
 
+    def _arrange_by_angle(self, *, update_only=False):
+        self._update_angle_id()
+
+        if update_only:
+            return
+
         if self.sort_by_angle:
             self._projections = sorted(
                 self._projections,
                 key=lambda x: float(x.id_angle),
             )
-        # filter angle
-        if self._include_angle:
+        # filter angle (no need if use provided angle list, i.e. ignore
+        # raw files
+        if self._include_angle and not self._ignore_raw:
             self._projections = self._filter_angle()
 
     def _filter_angle(self):

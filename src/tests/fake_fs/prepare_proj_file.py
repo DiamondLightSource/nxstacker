@@ -20,6 +20,8 @@ class PreparePtyPyFile:
         x_px_size,
         y_px_size,
         scan_name=None,
+        *,
+        use_nxs=True,
     ):
         """Initialise the instance for preparation.
 
@@ -38,6 +40,9 @@ class PreparePtyPyFile:
         scan_name : str, optional
             the scan name in a PtyPy configuration file. Default to
             None, set to "my_sample".
+        use_nxs : str, optional
+            if True, the raw file is .nxs instead of .ptyd. Default to
+            True.
 
         """
         self.scan_num = scan_num
@@ -57,6 +62,7 @@ class PreparePtyPyFile:
             self.scan_name = scan_name
         self.storage = f"S{self.scan_name}G00"
 
+        self.use_nxs = use_nxs
         self.proj_files = []
 
     def write_dummy_proj(self):
@@ -67,9 +73,14 @@ class PreparePtyPyFile:
             fp = self.proj_dir / f"scan_{sn}.ptyr"
 
             with h5py.File(fp, "w") as f:
-                f[
-                    f"/content/pars/scans/{self.scan_name}/data/intensities/file"
-                ] = str(rf)
+                if self.use_nxs:
+                    f[
+                        f"/content/pars/scans/{self.scan_name}/data/intensities/file"
+                    ] = str(rf)
+                else:
+                    f[f"/content/pars/scans/{self.scan_name}/data/dfile"] = (
+                        str(rf.parent.parent / f"processing/{sn}.ptyd")
+                    )
                 f[f"/content/obj/{self.storage}/data"] = rng.random(
                     self.ob_sh, dtype=np.float32
                 ) + 1j * rng.random(self.ob_sh, dtype=np.float32)

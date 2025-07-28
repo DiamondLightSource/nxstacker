@@ -44,6 +44,7 @@ class XRFTomo(TomoExpt):
         pad_to_max=True,
         compress=False,
         skip_proj_file_check=False,
+        ignore_raw=False,
         **kwargs,
     ):
         """Initialise the instance."""
@@ -60,6 +61,7 @@ class XRFTomo(TomoExpt):
             pad_to_max=pad_to_max,
             compress=compress,
             skip_proj_file_check=skip_proj_file_check,
+            ignore_raw=ignore_raw,
         )
 
         self.transition = kwargs.get("transition")

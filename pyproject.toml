@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nxstacker"
-version = "2024.11"
+version = "2025.07"
 dependencies = [
   "blosc",
   "h5py",

@@ -61,8 +61,7 @@ def unique_or_raise(iterable, companion=None, label="item", reference=None):
 
     if len(iterable) != len(companion):
         msg = (
-            "The companion must have the same length with the actual "
-            "iterable."
+            "The companion must have the same length with the actual iterable."
         )
         raise ValueError(msg)
 
@@ -106,7 +105,7 @@ def add_timezone(time_isoformat):
 def parse_identifier(
     from_string=None, file_list=None, exclude=None, id_type=int
 ):
-    """Parse identifier specification as a tuple.
+    """Parse identifier specification.
 
     Parameters
     ----------
@@ -123,14 +122,14 @@ def parse_identifier(
 
     Returns
     -------
-    to_include : tuple
-        the identifiers to be included
+    pi : ProjIdentifier
+        the object that encapsulates the information of a parsed
+        identifier specification
 
     """
     pi = ProjIdentifier(from_string, file_list, exclude, id_type=id_type)
-    to_include = pi.identifiers
 
-    return to_include
+    return pi
 
 
 def as_dls_staging_area(visit):

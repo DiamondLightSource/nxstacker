@@ -38,6 +38,7 @@ class TomoExpt:
     nxtomo_dir = Directory()
     raw_dir = Directory(undefined_ok=True, must_exist=True)
     skip_proj_file_check = FixedValue()
+    ignore_raw = FixedValue()
     facility = ExperimentFacility()
     include_scan = IdentifierRange(int)
     include_proj = IdentifierRange(int)
@@ -67,6 +68,7 @@ class TomoExpt:
         pad_to_max,
         compress,
         skip_proj_file_check,
+        ignore_raw,
     ):
         """Initialise a tomography experiment."""
         self.proj_dir = proj_dir
@@ -74,6 +76,7 @@ class TomoExpt:
         self.nxtomo_dir = nxtomo_dir
         self.raw_dir = raw_dir
         self.skip_proj_file_check = skip_proj_file_check
+        self.ignore_raw = ignore_raw
 
         self.facility = facility
 
@@ -141,13 +144,11 @@ class TomoExpt:
             proj_start = self.projections[0].id_proj
             proj_end = self.projections[-1].id_proj
             prefix = (
-                f"{common}_{self.metadata.scan_start}_"
-                f"{proj_start}_{proj_end}"
+                f"{common}_{self.metadata.scan_start}_{proj_start}_{proj_end}"
             )
         else:
             prefix = (
-                f"{common}_{self.metadata.scan_start}_"
-                f"{self.metadata.scan_end}"
+                f"{common}_{self.metadata.scan_start}_{self.metadata.scan_end}"
             )
         return prefix
 
@@ -252,14 +253,13 @@ class TomoExpt:
                 is_are = "s are" if (len(missing_proj) > 1) else " is"
                 mp = quote_iterable(missing_proj)
                 logger.warning(
-                    f"The following projection number{is_are} "
-                    f"missing: {mp}."
+                    f"The following projection number{is_are} missing: {mp}."
                 )
             if missing_angle:
                 is_are = "s are" if (len(missing_angle) > 1) else "s is"
                 ma = quote_iterable(missing_angle)
                 logger.warning(
-                    f"The following rotation angle{is_are} " f"missing: {ma}."
+                    f"The following rotation angle{is_are} missing: {ma}."
                 )
 
         return missing_scan, missing_proj, missing_angle
@@ -303,6 +303,12 @@ class TomoExpt:
                 assume_file_type = "'unknown'"
             logger.info(
                 f"Assume the projection files are from {assume_file_type}."
+            )
+
+        if self._ignore_raw:
+            logger.info(
+                "Metadata will not be obtained from raw files but from "
+                "the provided lists."
             )
 
         st = time.perf_counter()
@@ -353,13 +359,11 @@ class TomoExpt:
         logger.info("Finished extracting projection metadata.")
         elapse = time.perf_counter() - st
         logger.info(
-            "The duration of extraction projections metadata: "
-            f"{elapse:.2f} s"
+            f"The duration of extraction projections metadata: {elapse:.2f} s"
         )
         logger.info(f"The title is '{self.metadata.title}'.")
         logger.info(
-            f"The sample description is "
-            f"'{self.metadata.sample_description}'."
+            f"The sample description is '{self.metadata.sample_description}'."
         )
         logger.info(
             "The detector distance is "
