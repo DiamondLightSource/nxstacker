@@ -134,11 +134,48 @@ def tomojoin(
     else:
         log_level = logging.INFO
 
-    include_scan = parse_identifier(from_scan, scan_list, exclude_scan)
-    include_proj = parse_identifier(from_proj, proj_list, exclude_proj)
-    include_angle = parse_identifier(
+    pi_scan = parse_identifier(from_scan, scan_list, exclude_scan)
+    include_scan = pi_scan.identifiers
+
+    pi_proj = parse_identifier(from_proj, proj_list, exclude_proj)
+    include_proj = pi_proj.identifiers
+
+    pi_angle = parse_identifier(
         from_angle, angle_list, exclude_angle, id_type=float
     )
+    include_angle = pi_angle.identifiers
+
+    ignore_raw = False
+    if ignore_metadata_from_raw:
+        scan_and_angle = pi_scan.only_from_file and pi_angle.only_from_file
+        proj_and_angle = pi_proj.only_from_file and pi_angle.only_from_file
+
+        if not scan_and_angle and not proj_and_angle:
+            msg = (
+                "Either lists of scans/projections and angles must be "
+                "provided if metadata is not obtained from raw files."
+            )
+            raise RuntimeError(msg)
+
+        if scan_and_angle and len(pi_scan.identifiers) != len(
+            pi_angle.identifiers
+        ):
+            msg = (
+                "The provided lists of scans and angles does not contain "
+                "the same number of entries."
+            )
+            raise RuntimeError(msg)
+
+        if proj_and_angle and len(pi_proj.identifiers) != len(
+            pi_angle.identifiers
+        ):
+            msg = (
+                "The provided lists of projections and angles does not "
+                "contain the same number of entries."
+            )
+            raise RuntimeError(msg)
+
+        ignore_raw = True
 
     # initiate instance for experiment
     tomo_expt = select_tomo_expt(
@@ -155,6 +192,7 @@ def tomojoin(
         pad_to_max=pad_to_max,
         compress=compress,
         skip_proj_file_check=skip_proj_file_check,
+        ignore_raw=ignore_raw,
         **kwargs,
     )
 
