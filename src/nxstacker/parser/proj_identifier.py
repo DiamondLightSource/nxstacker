@@ -106,19 +106,20 @@ class ProjIdentifier:
         if exclude is not None:
             self.exclude = generate_numbers(exclude, self.id_type)
 
-        # retain order, a bit inefficient
-        merged = list(dict.fromkeys(self.from_range)) + list(
-            dict.fromkeys(self.from_file)
-        )
-        merged = list(dict.fromkeys(merged))
-        for entry in merged:
-            if entry not in self.exclude:
-                self.identifiers.append(entry)
-
-        self.identifiers = tuple(self.identifiers)
-
         if from_file is not None and from_range is None and exclude is None:
             self.only_from_file = True
+            self.identifiers = self.from_file
+        else:
+            # retain order, a bit inefficient
+            merged = list(dict.fromkeys(self.from_range)) + list(
+                dict.fromkeys(self.from_file)
+            )
+            merged = list(dict.fromkeys(merged))
+            for entry in merged:
+                if entry not in self.exclude:
+                    self.identifiers.append(entry)
+
+        self.identifiers = tuple(self.identifiers)
 
     def id_from_range(self, specifier):
         """Return numbers from <START>[-<END>[:<STEP>]]."""
