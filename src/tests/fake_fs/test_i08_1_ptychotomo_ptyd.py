@@ -174,12 +174,6 @@ def test_ptycho_i08_1_with_no_nxs(
             sample_x_value_set.size,
         )
 
-        # in m
-        assert np.isclose(
-            f["/entry/instrument/detector/distance"][()],
-            detector_distance,
-        )
-
         assert np.isclose(
             f["/entry/instrument/detector/x_pixel_size"][()], x_px_size
         )

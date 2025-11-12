@@ -90,9 +90,9 @@ class MetadataPtycho(NXtomoMetadata):
         """Find the metadata of the current projections and facility."""
         self.title = self.title_from_scan()
         self.sample_description = self.description_from_scan()
-        self.detector_distance = self.find_detector_dist()
         self.x_pixel_size, self.y_pixel_size = self.find_pixel_size()
         if not self.ignore_raw:
+            self.detector_distance = self.find_detector_dist()
             self.rotation_angle = self.find_rotation_angle()
             self.start_time = self.start_time_from_scan()
             self.end_time = self.end_time_from_scan()
