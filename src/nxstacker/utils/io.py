@@ -238,7 +238,7 @@ def pad2stack(proj, stack_shape):
         final = np.pad(
             proj,
             ((top, bottom), (left, right)),
-            mode="symmetric",
+            mode="constant",
         )
     else:
         final = proj
